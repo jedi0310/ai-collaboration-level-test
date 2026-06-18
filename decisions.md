@@ -259,3 +259,42 @@ git@github.com:jedi0310/ai-collaboration-level-test.git
 ### 安全记录
 
 项目线程不读取、不输出、不记录私钥 `/Users/jedizhang/.ssh/id_ed25519`。项目已新增 `docs/github-ssh-key-guide.md`，说明 SSH key、公钥添加、后续更新和故障排查。
+
+## 2026-06-18 SSH push 被远端已有提交拒绝
+
+### 已执行
+
+SSH 认证成功后，项目线程已执行：
+
+```bash
+git remote set-url origin git@github.com:jedi0310/ai-collaboration-level-test.git
+git push -u origin main
+```
+
+### 结果
+
+push 失败：
+
+```text
+! [rejected]        main -> main (fetch first)
+error: failed to push some refs to 'github.com:jedi0310/ai-collaboration-level-test.git'
+hint: Updates were rejected because the remote contains work that you do not
+hint: have locally.
+```
+
+### 判断
+
+远端 `main` 分支已有提交，通常是 GitHub 网页创建仓库时勾选了 README、license 或其他初始化内容。本地不应强推覆盖远端历史。
+
+### 下一步
+
+需要用户确认是否允许项目线程先拉取远端内容并合并，再推送。本项目推荐合并远端内容，不建议强推覆盖。
+
+预计命令：
+
+```bash
+git pull origin main --allow-unrelated-histories --no-rebase
+git push -u origin main
+```
+
+如果合并出现冲突，项目线程应停止并回报，不得擅自覆盖。

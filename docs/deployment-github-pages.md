@@ -129,6 +129,31 @@ Hi jedi0310! You've successfully authenticated, but GitHub does not provide shel
 git@github.com:jedi0310/ai-collaboration-level-test.git
 ```
 
+更新：remote 已切换为 SSH，SSH 认证成功，但 `git push -u origin main` 被远端拒绝：
+
+```text
+! [rejected]        main -> main (fetch first)
+error: failed to push some refs to 'github.com:jedi0310/ai-collaboration-level-test.git'
+hint: Updates were rejected because the remote contains work that you do not
+hint: have locally.
+```
+
+含义：GitHub 远程仓库的 `main` 分支已经有提交，通常是创建仓库时勾选了 README、license 或其他初始化文件。本地不能直接覆盖远端历史，项目线程也不会强推。
+
+下一步需要用户确认：
+
+1. 是否允许项目线程先拉取远端内容并合并，再 push。
+2. 或者用户确认远端内容不需要保留，再另行讨论是否覆盖。当前不建议覆盖。
+
+推荐选择 1。预计命令会是：
+
+```bash
+git pull origin main --allow-unrelated-histories --no-rebase
+git push -u origin main
+```
+
+如果 pull 后出现冲突，项目线程会停止并回报，不会擅自覆盖用户内容。
+
 ### 推荐下一步：生成新的 SSH key
 
 需要用户授权后，项目线程才可以生成新的 ed25519 SSH key。建议命令：

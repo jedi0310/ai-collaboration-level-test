@@ -9,7 +9,7 @@
 - [x] 补录总控误接管期间的功能变更和项目线程承接规则。
 - [ ] 本地打开静态 MVP 做人工体验验收。
 - [ ] 验证用户画像填写、报告称呼和每日 3 次生成限制。
-- [ ] SSH 已认证成功，等待切换 remote 并 push 到 GitHub。
+- [ ] SSH 已认证成功，push 被远端已有提交拒绝，等待用户确认是否 pull 合并远端内容后再 push。
 
 ## 待办池
 
@@ -31,7 +31,7 @@
 
 ## 进行中
 
-- [ ] GitHub Pages 部署正在通过 SSH remote 推送。
+- [ ] GitHub Pages 部署等待用户确认如何处理远端已有提交。
 
 ## 已完成
 
@@ -46,6 +46,7 @@
 - [x] 已检查 SSH GitHub 认证：当前为 `Permission denied (publickey)`，本机未发现 `.pub` 公钥。
 - [x] 用户已添加 SSH 公钥到 GitHub，SSH 认证验证成功。
 - [x] 新增 GitHub SSH key 使用说明。
+- [x] 已将 remote 切换为 SSH；push 因远端已有提交被拒绝，未强推。
 - [x] 已初始化本地 git、创建首次提交、添加 GitHub remote；push 卡在 GitHub 认证。
 
 ## 暂停 / 以后再说
