@@ -8,8 +8,8 @@
 - [x] 定稿 DeepSeek 个性化报告 prompt 和输出结构。
 - [x] 补录总控误接管期间的功能变更和项目线程承接规则。
 - [ ] 本地打开静态 MVP 做人工体验验收。
-- [ ] 验证用户画像填写、报告称呼和每日 3 次生成限制。
-- [ ] SSH 已认证成功，push 被远端已有提交拒绝，等待用户确认是否 pull 合并远端内容后再 push。
+- [ ] 验证用户画像填写、报告称呼和测试阶段不限次生成报告链路。
+- [ ] 合并远端已有提交后继续 push，并开启 GitHub Pages。
 
 ## 待办池
 
@@ -20,7 +20,9 @@
 - [x] 接入 DeepSeek API Key 输入模式。
 - [x] 增加用户名字/网名、行业、职业填写，用于个性化报告。
 - [x] 增加同一浏览器同一昵称每日 3 次 DeepSeek 报告软限制。
-- [ ] 评估是否增加 Cloudflare Worker 或 Vercel Function 作为公开版 API 代理。
+- [x] 测试阶段临时关闭前端每日 3 次软限制，方便反复跑链路。
+- [ ] 正式发布前重新决定限流策略。
+- [ ] 评估并实现 Cloudflare Worker 或 Vercel Function 作为公开版 DeepSeek API 代理。
 - [x] 完成 GitHub Pages 本地部署适配检查。
 - [x] 新增 GitHub Pages 小白部署指南。
 - [x] 增加 DeepSeek API 失败时的模板报告 fallback。
@@ -31,7 +33,7 @@
 
 ## 进行中
 
-- [ ] GitHub Pages 部署等待用户确认如何处理远端已有提交。
+- [ ] GitHub Pages 部署：解决远端合并冲突，重新 push。
 
 ## 已完成
 
@@ -48,6 +50,7 @@
 - [x] 新增 GitHub SSH key 使用说明。
 - [x] 已将 remote 切换为 SSH；push 因远端已有提交被拒绝，未强推。
 - [x] 已初始化本地 git、创建首次提交、添加 GitHub remote；push 卡在 GitHub 认证。
+- [x] 用户已确认允许合并远端已有提交，不强推。
 
 ## 暂停 / 以后再说
 

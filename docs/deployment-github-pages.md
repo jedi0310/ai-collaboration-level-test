@@ -154,6 +154,40 @@ git push -u origin main
 
 如果 pull 后出现冲突，项目线程会停止并回报，不会擅自覆盖用户内容。
 
+更新：用户已确认允许合并远端已有提交，不强推。执行 `git pull origin main --allow-unrelated-histories --no-rebase` 后，远端和本地的项目记录文档出现 add/add 冲突：
+
+```text
+decisions.md
+docs/deployment-github-pages.md
+tasks.md
+```
+
+本次冲突只涉及项目记录和部署文档，不涉及 `index.html`、`styles.css`、`app.js` 功能代码。解决原则是以本地项目线程记录为主，因为本地包含 SSH、部署阻塞、总控补录等完整上下文；如远端手动上传版本有有价值信息，再合并进当前文档。
+
+## 测试阶段 DeepSeek 限次状态
+
+用户需要多次验证测试和报告链路，当前已临时关闭前端“同一浏览器、同一昵称每天 3 次”的 DeepSeek 报告生成限制。
+
+当前状态：
+
+- 答题测试不限次。
+- DeepSeek 报告生成在测试阶段也不限次。
+- 页面不再显示“今天剩余次数”或“每天 3 次”。
+- 代码不写入任何 DeepSeek API Key。
+- 正式发布前再决定限流策略。
+
+## 下一阶段 DeepSeek 代理方案
+
+如果公开版希望访问者不填写 DeepSeek API Key，不能把站长自己的 Key 写进 GitHub Pages 前端。建议下一阶段采用：
+
+1. GitHub Pages 继续托管静态页面。
+2. Cloudflare Worker 或 Vercel Function 作为 DeepSeek API 代理。
+3. 站长 DeepSeek API Key 放在代理服务环境变量中。
+4. 前端只请求代理接口，不接触真实 Key。
+5. 代理层负责真实限流、日志、错误处理和成本保护。
+
+当前不实现 Worker 或 Vercel Function，只记录为正式发布前的架构待办。
+
 ### 推荐下一步：生成新的 SSH key
 
 需要用户授权后，项目线程才可以生成新的 ed25519 SSH key。建议命令：
