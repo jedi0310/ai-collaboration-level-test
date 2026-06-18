@@ -871,22 +871,32 @@ async function downloadPdf() {
     if (!window.html2pdf) throw new Error("PDF 组件未加载");
     exportNode = buildPdfExportNode(diagnosis, markdown);
     document.body.appendChild(exportNode);
-    await window
+    await waitForPdfLayout(exportNode);
+    if (exportNode.innerText.trim().length < 80) throw new Error("报告内容为空");
+    const pdfBlob = await window
       .html2pdf()
       .set({
-        margin: [10, 10, 12, 10],
-        filename: `${filenameBase}.pdf`,
+        margin: [8, 8, 10, 8],
         image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+        html2canvas: {
+          scale: Math.min(2, window.devicePixelRatio || 1.5),
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 820,
+        },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        pagebreak: { mode: ["css", "legacy"] },
+        pagebreak: { mode: ["css", "avoid-all", "legacy"] },
       })
       .from(exportNode)
-      .save();
+      .outputPdf("blob");
+    if (!pdfBlob || pdfBlob.size < 1000) throw new Error("PDF 内容为空");
+    downloadBlob(pdfBlob, `${filenameBase}.pdf`);
     showToast("PDF 已开始下载");
   } catch (error) {
-    downloadMarkdown(markdown, `${filenameBase}.md`);
-    showToast("PDF 生成失败，已改为下载 Markdown 报告");
+    downloadHtmlReport(diagnosis, markdown, `${filenameBase}.html`);
+    showToast("PDF 生成失败，已下载报告文本");
   } finally {
     exportNode?.remove();
   }
@@ -895,6 +905,7 @@ async function downloadPdf() {
 function buildPdfExportNode(diagnosis, markdown) {
   const node = document.createElement("article");
   node.className = "pdf-export";
+  node.setAttribute("aria-hidden", "true");
   node.innerHTML = `
     <header>
       <p>AI 协同等级测试报告</p>
@@ -910,8 +921,39 @@ function buildPdfExportNode(diagnosis, markdown) {
   return node;
 }
 
-function downloadMarkdown(markdown, filename) {
-  const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+function waitForPdfLayout(node) {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      node.getBoundingClientRect();
+      window.setTimeout(resolve, 120);
+    });
+  });
+}
+
+function downloadHtmlReport(diagnosis, markdown, filename) {
+  const html = `<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${escapeHtml(diagnosis.level.name)} - AI 协同等级测试报告</title>
+  <style>
+    body{max-width:760px;margin:32px auto;padding:0 18px;color:#171511;background:#fff;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.75}
+    h1,h2,h3{font-family:Georgia,"Songti SC","SimSun",serif;font-weight:500}
+    h1{font-size:34px} h2{margin-top:28px;font-size:24px} h3{margin-top:20px;color:#9e4b32}
+    .meta{color:#6d675e;border-bottom:1px solid #d8ccbb;padding-bottom:16px;margin-bottom:20px}
+  </style>
+</head>
+<body>
+  <p class="meta">AI 协同等级测试报告 · ${escapeHtml(getProfileLine())} · ${escapeHtml(diagnosis.rawScore)}/24</p>
+  ${markdownToHtml(markdown)}
+</body>
+</html>`;
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  downloadBlob(blob, filename);
+}
+
+function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

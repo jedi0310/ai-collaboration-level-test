@@ -537,15 +537,24 @@ input:focus-visible {
 }
 
 .pdf-export {
-  position: fixed;
-  left: -9999px;
+  position: absolute;
+  left: 0;
   top: 0;
-  width: 760px;
-  padding: 38px;
-  background: #fff;
-  color: #171511;
+  z-index: -1;
+  display: block;
+  width: 794px;
+  min-height: 1123px;
+  overflow: visible;
+  padding: 42px;
+  background: #ffffff;
+  color: #171511 !important;
   font-family: "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   line-height: 1.72;
+  visibility: visible;
+  opacity: 1;
+  pointer-events: none;
+  contain: none;
+  box-shadow: none;
 }
 
 .pdf-export header {
@@ -563,8 +572,10 @@ input:focus-visible {
 .pdf-export h1,
 .pdf-export h2,
 .pdf-export h3 {
+  color: #171511;
   font-family: Georgia, "Songti SC", "SimSun", serif;
   font-weight: 500;
+  break-after: avoid;
 }
 
 .pdf-export h1 {
@@ -585,7 +596,14 @@ input:focus-visible {
 
 .pdf-export p,
 .pdf-export ul {
+  color: #171511;
   margin: 0 0 10px;
+}
+
+.pdf-export section,
+.pdf-export li,
+.pdf-export p {
+  break-inside: avoid;
 }
 
 .pdf-export li {
