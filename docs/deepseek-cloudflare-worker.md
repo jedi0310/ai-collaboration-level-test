@@ -21,7 +21,7 @@
 - `name` / 名字或网名：必填。
 - `industry` / 行业：必填。
 - `role` / 职位或主要工作：选填。
-- `contact` / 联系方式：选填，手机号或微信号均可；不填也能继续测试。
+- `contact` / 手机号：选填；不填也能继续测试。
 
 如果 Worker 名称或 workers.dev 子域不同，需要修改 `app.js` 里的 `WORKER_REPORT_ENDPOINT`。
 

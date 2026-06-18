@@ -332,6 +332,7 @@ const state = {
   current: 0,
   answers: {},
   profile: loadProfile(),
+  profileDraft: { name: "", industry: "", role: "", contact: "" },
   diagnosis: null,
   aiReport: "",
   loadingReport: false,
@@ -384,6 +385,7 @@ function renderStart() {
 }
 
 function renderProfile() {
+  const draft = state.profileDraft || { name: "", industry: "", role: "", contact: "" };
   app.innerHTML = `
     <section class="screen profile-screen">
       <header class="site-header">
@@ -398,27 +400,27 @@ function renderProfile() {
         </section>
         <section class="profile-card">
           <label class="field">
-            <span>名字或网名</span>
-            <input id="profileName" autocomplete="name" maxlength="32" placeholder="请输入你的名字或网名" value="${escapeHtml(state.profile.name || "")}" />
+            <span>名字或网名 *</span>
+            <input id="profileName" autocomplete="off" maxlength="32" placeholder="" value="${escapeHtml(draft.name || "")}" />
           </label>
           <label class="field">
-            <span>行业</span>
-            <input id="profileIndustry" autocomplete="organization-title" maxlength="40" placeholder="例如：教育培训 / 咨询 / 内容创作 / 电商" value="${escapeHtml(state.profile.industry || "")}" />
+            <span>行业 *</span>
+            <input id="profileIndustry" autocomplete="off" maxlength="40" placeholder="" value="${escapeHtml(draft.industry || "")}" />
           </label>
           <label class="field">
-            <span>职位或主要工作（选填）</span>
-            <input id="profileRole" maxlength="48" placeholder="例如：创始人 / 运营负责人 / 老师 / 自由职业者" value="${escapeHtml(state.profile.role || "")}" />
+            <span>职位（选填）</span>
+            <input id="profileRole" autocomplete="off" maxlength="48" placeholder="" value="${escapeHtml(draft.role || "")}" />
           </label>
           <label class="field">
-            <span>联系方式（选填）</span>
-            <input id="profileContact" maxlength="64" placeholder="手机号或微信号（选填）" value="${escapeHtml(state.profile.contact || "")}" />
+            <span>手机号（选填）</span>
+            <input id="profileContact" autocomplete="off" inputmode="tel" maxlength="32" placeholder="" value="${escapeHtml(draft.contact || "")}" />
           </label>
           ${state.profileError ? `<p class="form-error">${escapeHtml(state.profileError)}</p>` : ""}
           <div class="start-actions">
             <button class="button" data-action="save-profile">开始答题</button>
             <button class="button secondary" data-action="restart">返回</button>
           </div>
-          <p class="privacy-note">隐私提示：会保存你的名字/网名、行业、选填职位、答题结果和生成报告；如果填写联系方式，也会一起保存，用于后续反馈或沟通。不填职位和联系方式也能继续测试。请不要填写身份证、详细地址、公司机密等敏感信息。</p>
+          <p class="privacy-note">隐私提示：会保存你的名字/网名、行业、选填职位、答题结果和生成报告；如果填写手机号，也会一起保存，用于后续反馈或沟通。不填职位和手机号也能继续测试。请不要填写身份证、详细地址、公司机密等敏感信息。</p>
         </section>
       </div>
     </section>
@@ -529,7 +531,7 @@ function renderReport() {
             <h2>DeepSeek 个性化报告</h2>
             <button class="button secondary" data-action="ai-report" ${state.loadingReport ? "disabled" : ""}>${state.loadingReport ? "生成中..." : "重新生成 AI 报告"}</button>
             <p class="status">${state.status || "公开测试版通过 Cloudflare Worker 安全生成报告；访问者不需要填写 API Key。"}</p>
-            <p class="privacy-note">生成时会保存画像、答题结果、报告和你选填的联系方式，供站长改进测试和后续反馈。请勿填写身份证、详细地址、公司机密等敏感信息。</p>
+            <p class="privacy-note">生成时会保存画像、答题结果、报告和你选填的手机号，供站长改进测试和后续反馈。请勿填写身份证、详细地址、公司机密等敏感信息。</p>
           </section>
         </aside>
       </section>
@@ -945,6 +947,7 @@ app.addEventListener("click", (event) => {
   if (action === "start") {
     state.screen = "profile";
     state.profileError = "";
+    state.profileDraft = { name: "", industry: "", role: "", contact: "" };
     render();
   }
   if (action === "save-profile") {
@@ -952,6 +955,7 @@ app.addEventListener("click", (event) => {
     const industry = document.querySelector("#profileIndustry")?.value || "";
     const role = document.querySelector("#profileRole")?.value || "";
     const contact = document.querySelector("#profileContact")?.value || "";
+    state.profileDraft = { name, industry, role, contact };
     if (!name.trim()) {
       state.profileError = "请先填写名字或网名，报告需要用它来称呼你。";
       renderProfile();
@@ -963,6 +967,7 @@ app.addEventListener("click", (event) => {
       return;
     }
     saveProfile({ name, industry, role, contact });
+    state.profileDraft = { name: "", industry: "", role: "", contact: "" };
     state.profileError = "";
     state.screen = "question";
     state.current = 0;
