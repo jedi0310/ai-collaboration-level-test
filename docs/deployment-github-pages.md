@@ -73,6 +73,29 @@ https://jedi0310.github.io/ai-collaboration-level-test/
 
 不推荐“纯网页上传”作为主路径，因为后续每次更新都要重新上传文件，容易漏掉 `docs/` 或项目记录。纯网页上传可以作为不用命令行的备选方案。
 
+## 当前执行状态
+
+2026-06-18 已在本项目目录完成本地 git 初始化和首次提交：
+
+```text
+commit: dc5a0f8 Deploy AI collaboration level test
+remote: https://github.com/jedi0310/ai-collaboration-level-test.git
+```
+
+执行 `git push -u origin main` 时失败：
+
+```text
+fatal: could not read Username for 'https://github.com': Device not configured
+```
+
+含义：本机当前没有可供命令行使用的 GitHub HTTPS 登录凭据。项目线程不会索要或处理 GitHub 密码、验证码、token。下一步需要用户完成 GitHub 命令行认证，或改用网页上传。
+
+可选处理方式：
+
+1. 用户在系统 Git 凭据弹窗、浏览器或终端中完成 GitHub 认证后，再由项目线程重试 `git push -u origin main`。
+2. 用户安装并登录 GitHub CLI 后再推送；当前项目线程不会自动安装 `gh`。
+3. 用户改用 GitHub 网页上传文件。
+
 ## 用户现在需要确认
 
 继续命令行部署前，请用户确认：
