@@ -155,6 +155,27 @@ https://ai-test-deepseek-proxy.jedi0310.workers.dev/api/report
 - `cloudflare-worker/worker.js`：Worker 代理模板，包含 `/api/report`、`/api/health`、`/api/admin/reports`、`/api/admin/reports/:id`。
 - `cloudflare-worker/schema.sql`：D1 `submissions` 表结构。
 - `cloudflare-worker/migrations/2026-06-19-add-contact.sql`：线上 D1 旧表增加 `contact` 字段的迁移。
+
+## 2026-06-19 移动端报告生成超时保护
+
+### 决策
+
+公测发现手机端完成测试后，顶部按钮可能长期停留在“AI 报告生成中”。根因判断是前端 `fetch(WORKER_REPORT_ENDPOINT)` 没有超时控制：如果移动端网络、Worker 或 DeepSeek 请求挂起，`finally` 不执行，`state.loadingReport` 会一直保持 `true`。
+
+本轮先只改前端，不改 Worker/D1。前端报告生成请求增加：
+
+- `AbortController`
+- 45 秒超时
+- `state.reportRequestId` 防止旧请求返回覆盖新测试状态
+
+### 影响
+
+- 如果 45 秒内 AI 报告没有返回，前端会 abort 请求。
+- `state.loadingReport` 会恢复为 `false`。
+- 顶部主按钮会从“AI 报告生成中”恢复为“下载报告”。
+- 页面会提示：AI 报告生成超时，已先生成基础报告，可下载保存。
+- 用户可以重新测试；旧请求即使稍后返回，也不会覆盖新状态。
+- 本轮不需要用户重新部署 Cloudflare Worker。
 - `cloudflare-worker/wrangler.toml.example`：命令行部署占位示例，不含真实账号或密钥。
 - `docs/deepseek-cloudflare-worker.md`：中文部署指南。
 

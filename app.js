@@ -326,6 +326,7 @@ const DAILY_REPORT_LIMIT = 3;
 const REPORT_LIMIT_ENABLED = false;
 const APP_VERSION = "public-worker-mvp-2026-06-18";
 const WORKER_REPORT_ENDPOINT = "https://ai-test-deepseek-proxy.jedi0310.workers.dev/api/report";
+const REPORT_REQUEST_TIMEOUT_MS = 45000;
 
 const state = {
   screen: "start",
@@ -337,6 +338,7 @@ const state = {
   diagnosis: null,
   aiReport: "",
   loadingReport: false,
+  reportRequestId: 0,
   status: "",
   profileError: "",
 };
@@ -537,7 +539,7 @@ function renderReport() {
         </div>
       </section>
       <section class="report-topbar">
-        <p class="status">${state.status || "正在准备你的报告。生成完成后可下载成图片保存或转发。"}</p>
+        <p class="status">${state.status || "正在准备你的报告。生成完成后可下载成图片保存或转发；如生成失败，也可下载基础报告。"}</p>
         <div class="report-actions">
           <button class="button" data-action="download-report" ${actionDisabled}>${actionLabel}</button>
           <button class="button secondary" data-action="restart">重新测试</button>
@@ -837,6 +839,8 @@ function recordReportUsage() {
 }
 
 async function generateAiReport(options = {}) {
+  const requestId = state.reportRequestId + 1;
+  state.reportRequestId = requestId;
   const usage = getReportUsage();
   if (REPORT_LIMIT_ENABLED && usage.remaining <= 0) {
     state.status = `${state.profile.name || "这个昵称"} 今天已经生成过 ${DAILY_REPORT_LIMIT} 次 DeepSeek 报告了。明天可以再生成；当前先保留基础报告。`;
@@ -846,8 +850,10 @@ async function generateAiReport(options = {}) {
   state.loadingReport = true;
   state.status = REPORT_LIMIT_ENABLED
     ? `正在请求 DeepSeek 生成报告... 今天剩余 ${usage.remaining} 次`
-    : "正在通过安全代理生成 DeepSeek 报告... 测试阶段暂不限生成次数";
+    : "AI 报告生成中。如果网络较慢，45 秒后会先显示基础报告。";
   renderReport();
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), REPORT_REQUEST_TIMEOUT_MS);
   try {
     const diagnosis = state.diagnosis || calculateDiagnosis();
     const payload = buildReportPayload(diagnosis);
@@ -857,8 +863,10 @@ async function generateAiReport(options = {}) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
+      signal: controller.signal,
     });
     const data = await response.json();
+    if (requestId !== state.reportRequestId) return;
     if (!response.ok || data?.ok === false) throw new Error(data?.message || `报告代理请求失败：${response.status}`);
     const content = data?.report_markdown;
     if (!content) throw new Error("DeepSeek 没有返回报告内容");
@@ -871,10 +879,17 @@ async function generateAiReport(options = {}) {
       ? `已生成 DeepSeek 个性化报告，并保存测试记录：${data.submission_id}。`
       : "已生成 DeepSeek 个性化报告。测试阶段可继续多次生成。";
   } catch (error) {
-    state.status = `${error.message}。已保留本地模板报告。`;
+    if (requestId !== state.reportRequestId) return;
+    state.status =
+      error.name === "AbortError"
+        ? "AI 报告生成超时，已先生成基础报告，可下载保存；稍后可重新测试。"
+        : `${error.message}。已先生成基础报告，可下载保存。`;
   } finally {
-    state.loadingReport = false;
-    renderReport();
+    window.clearTimeout(timeoutId);
+    if (requestId === state.reportRequestId) {
+      state.loadingReport = false;
+      renderReport();
+    }
   }
 }
 
@@ -1063,6 +1078,7 @@ app.addEventListener("click", (event) => {
     renderQuestion();
   }
   if (action === "restart") {
+    state.reportRequestId += 1;
     state.current = 0;
     state.answers = {};
     state.optionOrder = {};
