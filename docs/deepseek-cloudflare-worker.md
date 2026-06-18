@@ -206,7 +206,7 @@ https://ai-test-deepseek-proxy.jedi0310.workers.dev/api/report
 3. 完成 8 道题。
 4. 页面会自动请求 Worker 生成 DeepSeek 报告。
 5. 如果 Worker 或 DeepSeek 失败，页面会保留基础模板报告。
-6. 点击 `下载 PDF`，页面会直接生成并下载 PDF；如果生成失败，会自动下载 HTML 报告文本。
+6. 点击 `下载报告`，页面会直接生成并下载 PNG 图片；如果生成失败，会自动下载 HTML 报告文本。
 7. 用 admin endpoint 检查 D1 是否有记录。
 
 ## Admin endpoint 查看方式

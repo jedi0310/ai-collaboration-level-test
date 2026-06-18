@@ -8,7 +8,7 @@
 - [x] 定稿 DeepSeek 个性化报告 prompt 和输出结构。
 - [x] 补录总控误接管期间的功能变更和项目线程承接规则。
 - [ ] 本地打开静态 MVP 做人工体验验收。
-- [ ] 验证公开测试版 Worker 报告链路：画像、8 题、Worker 生成、D1 存档、PDF 下载。
+- [ ] 验证公开测试版 Worker 报告链路：画像、8 题、Worker 生成、D1 存档、图片报告下载。
 - [ ] 在 GitHub 仓库 Settings -> Pages 开启 GitHub Pages。
 - [ ] 在 Cloudflare Worker 后台配置 D1 binding 和 secrets，并部署 Worker。
 
@@ -35,7 +35,8 @@
 - [x] 重构题目为行为题、提示词示例题、Agent 识别题，减少模糊自评。
 - [x] 改为 Anthropic 式克制产品风格，移除幼稚化图形和重叠关卡图。
 - [x] 将最后一步改为“生成报告”，有 Key 时自动调用 DeepSeek，无 Key 时回退基础报告。
-- [x] 报告页“下载 PDF”改为 html2pdf.js 直接生成文件，失败时下载 HTML 报告文本。
+- [x] 报告页“下载报告”改为 html2canvas 生成 PNG 图片，失败时下载 HTML 报告文本。
+- [x] 每次测试开始时为每题生成稳定乱序选项，评分按选项自身分值计算。
 - [x] 新增公开测试版隐私提示：保存画像、答题结果和报告，提醒不要填写敏感信息。
 - [x] D1 schema 和 Worker 存档支持选填手机号字段，并提供线上迁移 SQL。
 

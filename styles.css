@@ -408,6 +408,23 @@ input:focus-visible {
   align-items: start;
 }
 
+.report-topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  background: rgba(251, 247, 239, 0.92);
+  box-shadow: var(--shadow);
+}
+
+.report-topbar .status {
+  flex: 1;
+}
+
 .report-body,
 .panel {
   padding: 24px;
@@ -536,7 +553,7 @@ input:focus-visible {
   color: var(--surface);
 }
 
-.pdf-export {
+.report-export {
   position: absolute;
   left: 0;
   top: 0;
@@ -557,60 +574,60 @@ input:focus-visible {
   box-shadow: none;
 }
 
-.pdf-export header {
+.report-export header {
   border-bottom: 1px solid #d8ccbb;
   padding-bottom: 18px;
   margin-bottom: 18px;
 }
 
-.pdf-export header p {
+.report-export header p {
   margin: 0 0 10px;
   color: #9e4b32;
   font-weight: 700;
 }
 
-.pdf-export h1,
-.pdf-export h2,
-.pdf-export h3 {
+.report-export h1,
+.report-export h2,
+.report-export h3 {
   color: #171511;
   font-family: Georgia, "Songti SC", "SimSun", serif;
   font-weight: 500;
   break-after: avoid;
 }
 
-.pdf-export h1 {
+.report-export h1 {
   margin: 0 0 10px;
   font-size: 34px;
 }
 
-.pdf-export h2 {
+.report-export h2 {
   margin: 20px 0 8px;
   font-size: 24px;
 }
 
-.pdf-export h3 {
+.report-export h3 {
   margin: 16px 0 8px;
   color: #9e4b32;
   font-size: 20px;
 }
 
-.pdf-export p,
-.pdf-export ul {
+.report-export p,
+.report-export ul {
   color: #171511;
   margin: 0 0 10px;
 }
 
-.pdf-export section,
-.pdf-export li,
-.pdf-export p {
+.report-export section,
+.report-export li,
+.report-export p {
   break-inside: avoid;
 }
 
-.pdf-export li {
+.report-export li {
   margin: 5px 0;
 }
 
-.pdf-score {
+.report-export-score {
   display: grid;
   grid-template-columns: 120px 1fr;
   gap: 18px;
@@ -620,13 +637,13 @@ input:focus-visible {
   margin-bottom: 18px;
 }
 
-.pdf-score strong {
+.report-export-score strong {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 30px;
   font-weight: 500;
 }
 
-.pdf-score span {
+.report-export-score span {
   color: #6d675e;
 }
 
@@ -643,6 +660,11 @@ input:focus-visible {
   .report-hero,
   .report-layout {
     grid-template-columns: 1fr;
+  }
+
+  .report-topbar {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .site-header {

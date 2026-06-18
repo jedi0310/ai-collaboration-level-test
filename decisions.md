@@ -144,13 +144,14 @@ https://ai-test-deepseek-proxy.jedi0310.workers.dev/api/report
 - 测试阶段继续不恢复每日 3 次限制。
 - Worker 失败或 DeepSeek 失败时，前端保留基础模板报告 fallback。
 - 画像字段规则调整为：名字/网名必填，行业必填，职位选填，手机号选填；手机号不填也能继续测试。
-- 报告页“下载 PDF”改为 html2pdf.js 直接生成文件；如果 PDF 生成失败，自动下载 HTML 报告文本，不再直接弹出打印界面。
+- 因 PDF 导出在公测中仍出现白板，报告页放弃主打 PDF，改为“下载报告”：使用 html2canvas 生成 PNG 图片，便于手机保存和转发；如果图片生成失败，自动下载 HTML 报告文本。
+- 题目选项展示顺序在每次测试开始时随机打乱，并在本次测试中保持稳定；答案按选项 id 记录，评分仍按选项自身 `score` 和维度分值计算，不依赖 A/B/C/D 展示位置。
 - 页面增加隐私提示：公开测试版会保存名字/网名、行业、选填职位、选填手机号、答题结果和生成报告，用于改进测试和后续反馈；提醒不要填写身份证、详细地址、公司机密等敏感信息。
 
 ### 文件
 
-- `app.js`：隐藏访问者 API Key 输入，改为 Worker 代理生成报告，增加公开测试版 payload、选填手机号和 PDF 下载按钮。
-- `styles.css`：补充打印 PDF 样式。
+- `app.js`：隐藏访问者 API Key 输入，改为 Worker 代理生成报告，增加公开测试版 payload、选填手机号、稳定乱序选项和图片报告下载按钮。
+- `styles.css`：补充报告页顶部动作区和图片导出样式。
 - `cloudflare-worker/worker.js`：Worker 代理模板，包含 `/api/report`、`/api/health`、`/api/admin/reports`、`/api/admin/reports/:id`。
 - `cloudflare-worker/schema.sql`：D1 `submissions` 表结构。
 - `cloudflare-worker/migrations/2026-06-19-add-contact.sql`：线上 D1 旧表增加 `contact` 字段的迁移。

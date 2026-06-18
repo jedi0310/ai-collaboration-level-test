@@ -331,6 +331,7 @@ const state = {
   screen: "start",
   current: 0,
   answers: {},
+  optionOrder: {},
   profile: loadProfile(),
   profileDraft: { name: "", industry: "", role: "", contact: "" },
   diagnosis: null,
@@ -429,9 +430,10 @@ function renderProfile() {
 
 function renderQuestion() {
   const question = QUESTIONS[state.current];
-  const selectedIndex = state.answers[question.id];
+  const selectedOptionId = state.answers[question.id];
   const answeredCount = Object.keys(state.answers).length;
   const progress = Math.round((answeredCount / QUESTIONS.length) * 100);
+  const orderedOptions = getOrderedOptions(question);
   app.innerHTML = `
     <section class="screen question-screen">
       <header class="site-header">
@@ -448,10 +450,10 @@ function renderQuestion() {
         <section class="question-main">
           <h1>${escapeHtml(question.title)}</h1>
           <div class="options" role="radiogroup" aria-label="${escapeHtml(question.title)}">
-            ${question.options
+            ${orderedOptions
               .map(
                 (option, index) => `
-                  <button class="option ${selectedIndex === index ? "selected" : ""}" data-action="answer" data-index="${index}" role="radio" aria-checked="${selectedIndex === index}">
+                  <button class="option ${selectedOptionId === option.id ? "selected" : ""}" data-action="answer" data-option-id="${option.id}" role="radio" aria-checked="${selectedOptionId === option.id}">
                     <span class="option-key">${String.fromCharCode(65 + index)}</span>
                     <span class="option-copy">
                       <strong>${escapeHtml(option.title)}</strong>
@@ -464,7 +466,7 @@ function renderQuestion() {
           </div>
           <div class="question-actions">
             <button class="button secondary" data-action="back" ${state.current === 0 ? "disabled" : ""}>上一步</button>
-            <button class="button" data-action="next" ${selectedIndex === undefined ? "disabled" : ""}>${state.current === QUESTIONS.length - 1 ? "生成报告" : "下一题"}</button>
+            <button class="button" data-action="next" ${selectedOptionId === undefined ? "disabled" : ""}>${state.current === QUESTIONS.length - 1 ? "生成报告" : "下一题"}</button>
           </div>
         </section>
       </div>
@@ -472,10 +474,50 @@ function renderQuestion() {
   `;
 }
 
+function prepareQuestionOrder() {
+  state.optionOrder = {};
+  QUESTIONS.forEach((question) => {
+    const ids = question.options.map((_, index) => getOptionId(question, index));
+    state.optionOrder[question.id] = shuffleStable(ids);
+  });
+}
+
+function getOrderedOptions(question) {
+  const order = state.optionOrder[question.id] || question.options.map((_, index) => getOptionId(question, index));
+  return order
+    .map((optionId) => {
+      const index = getOptionIndex(question, optionId);
+      return index >= 0 ? { ...question.options[index], id: optionId, originalIndex: index } : null;
+    })
+    .filter(Boolean);
+}
+
+function getOptionId(question, index) {
+  return `${question.id}_${index}`;
+}
+
+function getOptionIndex(question, optionId) {
+  const prefix = `${question.id}_`;
+  if (!String(optionId || "").startsWith(prefix)) return -1;
+  const index = Number(String(optionId).slice(prefix.length));
+  return Number.isInteger(index) && index >= 0 && index < question.options.length ? index : -1;
+}
+
+function shuffleStable(items) {
+  const shuffled = [...items];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
+}
+
 function renderReport() {
   const diagnosis = state.diagnosis || calculateDiagnosis();
   state.diagnosis = diagnosis;
   const reportMarkdown = state.aiReport || createFallbackReport(diagnosis);
+  const actionLabel = state.loadingReport ? "AI 报告生成中" : "下载报告";
+  const actionDisabled = state.loadingReport ? "disabled" : "";
   app.innerHTML = `
     <section class="screen report-screen">
       <header class="site-header">
@@ -494,13 +536,15 @@ function renderReport() {
           <p>${diagnosis.reportTitle}</p>
         </div>
       </section>
+      <section class="report-topbar">
+        <p class="status">${state.status || "正在准备你的报告。生成完成后可下载成图片保存或转发。"}</p>
+        <div class="report-actions">
+          <button class="button" data-action="download-report" ${actionDisabled}>${actionLabel}</button>
+          <button class="button secondary" data-action="restart">重新测试</button>
+        </div>
+      </section>
       <section class="report-layout">
         <main class="report-body">
-          <div class="report-actions">
-            <button class="button" data-action="copy">复制报告</button>
-            <button class="button secondary" data-action="download-pdf">下载 PDF</button>
-            <button class="button secondary" data-action="restart">重新测试</button>
-          </div>
           <div class="report-text" id="reportText">${markdownToHtml(reportMarkdown)}</div>
         </main>
         <aside class="side-stack">
@@ -527,12 +571,6 @@ function renderReport() {
             <h2>下一步方式</h2>
             <ul>${diagnosis.collaborationModes.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
           </section>
-          <section class="panel api-panel">
-            <h2>DeepSeek 个性化报告</h2>
-            <button class="button secondary" data-action="ai-report" ${state.loadingReport ? "disabled" : ""}>${state.loadingReport ? "生成中..." : "重新生成 AI 报告"}</button>
-            <p class="status">${state.status || "公开测试版通过 Cloudflare Worker 安全生成报告；访问者不需要填写 API Key。"}</p>
-            <p class="privacy-note">生成时会保存画像、答题结果、报告和你选填的手机号，供站长改进测试和后续反馈。请勿填写身份证、详细地址、公司机密等敏感信息。</p>
-          </section>
         </aside>
       </section>
     </section>
@@ -541,8 +579,10 @@ function renderReport() {
 
 function calculateDiagnosis() {
   const picked = QUESTIONS.map((question) => {
-    const index = state.answers[question.id] ?? 0;
-    return { question, index, option: question.options[index] };
+    const optionId = state.answers[question.id];
+    const index = getOptionIndex(question, optionId);
+    const safeIndex = index >= 0 ? index : 0;
+    return { question, index: safeIndex, option: question.options[safeIndex], optionId: getOptionId(question, safeIndex) };
   });
   const rawScore = picked.reduce((sum, item) => sum + item.option.score, 0);
   const dimensionTotals = Object.fromEntries(Object.keys(DIMENSIONS).map((key) => [key, 0]));
@@ -586,6 +626,7 @@ function calculateDiagnosis() {
     selectedAnswers: picked.map((item) => ({
       question: item.question.title,
       questionId: item.question.id,
+      optionId: item.optionId,
       answer: item.option.title,
       answerDetail: item.option.desc,
       evidence: item.option.evidence,
@@ -853,58 +894,42 @@ function buildReportPayload(diagnosis) {
   };
 }
 
-function copyReport() {
-  const diagnosis = state.diagnosis || calculateDiagnosis();
-  const text = state.aiReport || createFallbackReport(diagnosis);
-  navigator.clipboard
-    ?.writeText(text)
-    .then(() => showToast("报告已复制"))
-    .catch(() => showToast("复制失败，请手动选择文本"));
-}
-
-async function downloadPdf() {
+async function downloadReport() {
   const diagnosis = state.diagnosis || calculateDiagnosis();
   const markdown = state.aiReport || createFallbackReport(diagnosis);
   const filenameBase = getReportFilenameBase(diagnosis);
   let exportNode = null;
   try {
-    if (!window.html2pdf) throw new Error("PDF 组件未加载");
-    exportNode = buildPdfExportNode(diagnosis, markdown);
+    if (!window.html2canvas) throw new Error("图片组件未加载");
+    exportNode = buildReportExportNode(diagnosis, markdown);
     document.body.appendChild(exportNode);
-    await waitForPdfLayout(exportNode);
+    await waitForReportLayout(exportNode);
     if (exportNode.innerText.trim().length < 80) throw new Error("报告内容为空");
-    const pdfBlob = await window
-      .html2pdf()
-      .set({
-        margin: [8, 8, 10, 8],
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: {
-          scale: Math.min(2, window.devicePixelRatio || 1.5),
-          useCORS: true,
-          backgroundColor: "#ffffff",
-          scrollX: 0,
-          scrollY: 0,
-          windowWidth: 820,
-        },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        pagebreak: { mode: ["css", "avoid-all", "legacy"] },
-      })
-      .from(exportNode)
-      .outputPdf("blob");
-    if (!pdfBlob || pdfBlob.size < 1000) throw new Error("PDF 内容为空");
-    downloadBlob(pdfBlob, `${filenameBase}.pdf`);
-    showToast("PDF 已开始下载");
+    const canvas = await window.html2canvas(exportNode, {
+      backgroundColor: "#ffffff",
+      scale: Math.min(2, window.devicePixelRatio || 2),
+      useCORS: true,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: exportNode.scrollWidth,
+      windowHeight: exportNode.scrollHeight,
+    });
+    if (!canvas || canvas.width < 200 || canvas.height < 200) throw new Error("报告图片为空");
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png", 0.98));
+    if (!blob || blob.size < 1000) throw new Error("报告图片为空");
+    downloadBlob(blob, `${filenameBase}.png`);
+    showToast("报告图片已开始下载");
   } catch (error) {
     downloadHtmlReport(diagnosis, markdown, `${filenameBase}.html`);
-    showToast("PDF 生成失败，已下载报告文本");
+    showToast("图片生成失败，已下载报告文本");
   } finally {
     exportNode?.remove();
   }
 }
 
-function buildPdfExportNode(diagnosis, markdown) {
+function buildReportExportNode(diagnosis, markdown) {
   const node = document.createElement("article");
-  node.className = "pdf-export";
+  node.className = "report-export";
   node.setAttribute("aria-hidden", "true");
   node.innerHTML = `
     <header>
@@ -912,16 +937,16 @@ function buildPdfExportNode(diagnosis, markdown) {
       <h1>${escapeHtml(diagnosis.level.name)}</h1>
       <div>${escapeHtml(getProfileLine())}</div>
     </header>
-    <section class="pdf-score">
+    <section class="report-export-score">
       <strong>${diagnosis.rawScore}/24</strong>
       <span>${escapeHtml(diagnosis.reportTitle)}</span>
     </section>
-    <section class="pdf-content">${markdownToHtml(markdown)}</section>
+    <section class="report-export-content">${markdownToHtml(markdown)}</section>
   `;
   return node;
 }
 
-function waitForPdfLayout(node) {
+function waitForReportLayout(node) {
   return new Promise((resolve) => {
     requestAnimationFrame(() => {
       node.getBoundingClientRect();
@@ -1013,11 +1038,13 @@ app.addEventListener("click", (event) => {
     state.profileError = "";
     state.screen = "question";
     state.current = 0;
+    state.answers = {};
+    prepareQuestionOrder();
     render();
   }
   if (action === "answer") {
     const question = QUESTIONS[state.current];
-    state.answers[question.id] = Number(target.dataset.index);
+    state.answers[question.id] = target.dataset.optionId;
     renderQuestion();
   }
   if (action === "next") {
@@ -1038,14 +1065,14 @@ app.addEventListener("click", (event) => {
   if (action === "restart") {
     state.current = 0;
     state.answers = {};
+    state.optionOrder = {};
     state.diagnosis = null;
     state.aiReport = "";
     state.status = "";
     state.screen = "start";
     render();
   }
-  if (action === "copy") copyReport();
-  if (action === "download-pdf") downloadPdf();
+  if (action === "download-report") downloadReport();
   if (action === "ai-report") generateAiReport();
 });
 
