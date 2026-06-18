@@ -1,0 +1,181 @@
+# GitHub Pages 部署指南
+
+## 当前站点状态
+
+本项目是零依赖静态站点，部署到 GitHub Pages 时只需要仓库根目录包含：
+
+```text
+index.html
+styles.css
+app.js
+```
+
+当前页面引用是相对路径：
+
+```html
+<link rel="stylesheet" href="./styles.css" />
+<script src="./app.js"></script>
+```
+
+因此可以直接部署到 GitHub Pages 的仓库根目录。
+
+## 本地检查结果
+
+- `node --check app.js`：通过。
+- `index.html`、`styles.css`、`app.js`：适合静态托管。
+- 本机有 `git`：`/usr/bin/git`。
+- 当前项目目录还不是 git 仓库。
+- 未检测到 `gh` 命令；不要自动安装。
+
+## 用户需要先做什么
+
+用户还没有 GitHub 账号，需要先完成注册：
+
+1. 打开 GitHub 官网：`https://github.com/`
+2. 点击 `Sign up`。
+3. 填写邮箱、密码、用户名。
+4. 完成邮箱验证码验证。
+5. 登录 GitHub。
+
+注意：
+
+- 不要把 GitHub 密码、邮箱验证码、token 发给 agent。
+- 如果需要浏览器协助注册，必须先由总控向用户确认。
+
+## 推荐仓库设置
+
+注册完成后建议：
+
+- GitHub 用户名：`jedi0310`
+- 仓库名：`ai-collaboration-level-test`
+- 可见性：Public
+- 初始化 README：可以不勾选，因为本地已经有 README。
+- 部署来源：GitHub Pages -> `Deploy from a branch`
+- 分支：`main`
+- 目录：`/ (root)`
+
+部署完成后，访问地址通常是：
+
+```text
+https://jedi0310.github.io/ai-collaboration-level-test/
+```
+
+## 当前推荐路径
+
+因为本机没有检测到 `gh` 命令，且用户刚完成 GitHub 注册，当前最稳路径是：
+
+1. 用户先在 GitHub 网页创建一个空的 Public 仓库。
+2. 项目线程在用户确认后，在本项目目录初始化 git。
+3. 项目线程提交当前静态站点文件。
+4. 项目线程添加远程仓库地址。
+5. 项目线程执行 `git push -u origin main`。
+6. 用户或项目线程按确认权限配置 GitHub Pages。
+
+不推荐“纯网页上传”作为主路径，因为后续每次更新都要重新上传文件，容易漏掉 `docs/` 或项目记录。纯网页上传可以作为不用命令行的备选方案。
+
+## 用户现在需要确认
+
+继续命令行部署前，请用户确认：
+
+1. 仓库名是否使用 `ai-collaboration-level-test`。
+2. 仓库是否设置为 Public。
+3. 是否允许在本项目目录执行 `git init`。
+4. 是否允许把当前项目文件提交到本地 git。
+5. 是否允许添加远程仓库：
+
+```text
+https://github.com/jedi0310/ai-collaboration-level-test.git
+```
+
+6. 是否允许执行 `git push -u origin main`。
+7. Git 提交用的姓名和邮箱是什么。
+8. 如果推送时 GitHub 要求登录，是否由用户在系统弹窗、浏览器或终端里自行完成认证。
+
+不要把 GitHub 密码、验证码、token 发给 agent。
+
+## 用户网页创建空仓库步骤
+
+1. 登录 `https://github.com/`。
+2. 右上角点击 `+`。
+3. 选择 `New repository`。
+4. Repository name 填：`ai-collaboration-level-test`。
+5. 选择 `Public`。
+6. 不要勾选 `Add a README file`。
+7. 不要添加 `.gitignore`。
+8. 不要选择 License。
+9. 点击 `Create repository`。
+
+创建完成后，把仓库页面停在那里即可。仓库地址应为：
+
+```text
+https://github.com/jedi0310/ai-collaboration-level-test
+```
+
+## 用户确认后项目线程将执行的命令
+
+确认后，项目线程预计执行：
+
+```bash
+git init
+git branch -M main
+git add index.html styles.css app.js README.md AGENTS.md tasks.md decisions.md docs
+git commit -m "Deploy AI collaboration level test"
+git remote add origin https://github.com/jedi0310/ai-collaboration-level-test.git
+git push -u origin main
+```
+
+如果 git 用户名和邮箱未配置，还需要先执行用户确认过的：
+
+```bash
+git config user.name "<用户确认的提交姓名>"
+git config user.email "<用户确认的提交邮箱>"
+```
+
+这些配置可以只写入本项目仓库，不必写全局配置。
+
+## 用户手动部署步骤
+
+如果不用 `gh` 命令行，适合小白的方式是：
+
+1. 在 GitHub 创建新仓库 `ai-collaboration-level-test`。
+2. 在仓库页面选择上传文件。
+3. 上传项目根目录中的这些文件和目录：
+   - `index.html`
+   - `styles.css`
+   - `app.js`
+   - `README.md`
+   - `docs/`
+4. 提交上传。
+5. 打开仓库 `Settings`。
+6. 进入 `Pages`。
+7. Source 选择 `Deploy from a branch`。
+8. Branch 选择 `main`，Folder 选择 `/ (root)`。
+9. 保存后等待 1 到 3 分钟。
+10. 打开 GitHub Pages 给出的访问链接。
+
+## 命令行部署需要用户确认的事项
+
+如果后续希望由项目线程继续协助命令行部署，需要总控先向用户确认：
+
+- GitHub 用户名。
+- 仓库名。
+- 仓库是否公开。
+- 是否允许在本项目目录初始化 git。
+- 是否允许打开浏览器进行 GitHub 登录。
+- 是否允许使用 `gh auth login`，或改用 GitHub 网页手动创建仓库。
+- 是否允许推送到远程仓库。
+
+当前不能自动执行：
+
+- 注册 GitHub。
+- 登录 GitHub。
+- 创建 GitHub 仓库。
+- 推送远程仓库。
+- 安装 `gh`。
+- 处理密码、验证码、token 或任何密钥。
+
+## DeepSeek 和公开传播提醒
+
+当前纯前端模式不会把 DeepSeek API Key 写进代码。用户如果在页面里填 Key，Key 只保存在当前浏览器本地。
+
+但如果公开传播时想让访问者无需填写 Key，就不能把站长自己的 Key 放进 GitHub Pages 前端代码。需要增加 Cloudflare Worker 或 Vercel Function 代理，并在代理层做真实限流。

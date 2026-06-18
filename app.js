@@ -1,0 +1,967 @@
+const DIMENSIONS = {
+  control: {
+    name: "表达清晰度",
+    description: "能否用背景、目标、格式、例子和标准把需求说清楚",
+  },
+  breadth: {
+    name: "场景迁移度",
+    description: "是否把 AI 用到多类真实任务，而不是只查资料或闲聊",
+  },
+  form: {
+    name: "流程协作度",
+    description: "是否让 AI 参与多步骤任务、工具操作或连续执行",
+  },
+  role: {
+    name: "资产沉淀度",
+    description: "是否把有效方法沉淀成模板、资料包、检查清单或流程",
+  },
+};
+
+const LEVELS = [
+  { id: 0, name: "Lv.0 旁观者", summary: "AI 还没有进入你的真实任务。" },
+  { id: 1, name: "Lv.1 尝鲜者", summary: "你会试用 AI，但还没有稳定使用方式。" },
+  { id: 2, name: "Lv.2 对话者", summary: "你能用 AI 完成简单问答和基础生成。" },
+  { id: 3, name: "Lv.3 驯化师", summary: "你开始用更清楚的需求控制 AI 输出。" },
+  { id: 4, name: "Lv.4 越境者", summary: "你能把 AI 带到更多类型的任务里。" },
+  { id: 5, name: "Lv.5 织网者", summary: "你已经形成一些稳定的 AI 工作套路。" },
+  { id: 6, name: "Lv.6 召唤师", summary: "你开始让 AI 处理连续步骤和工具任务。" },
+  { id: 7, name: "Lv.7 铸造师", summary: "你开始打造自己的模板、资料包和流程。" },
+  { id: 8, name: "Lv.8 造物主", summary: "AI 已深度参与从想法到交付的过程。" },
+  { id: 9, name: "Lv.9 觉醒者", summary: "AI 协作已经成为你的工作方法论。" },
+  { id: 10, name: "Lv.10 一人军团", summary: "你拥有可复用、可扩展的个人 AI 系统。" },
+];
+
+const QUESTIONS = [
+  {
+    id: "frequency",
+    label: "真实使用",
+    title: "过去 30 天，你用 AI 完成过多少个真实任务？",
+    hint: "只算真的帮你完成了某件事：写完一段内容、改完一份材料、整理出一个表格、做出一个方案等。",
+    options: [
+      {
+        title: "0 个",
+        desc: "看过、听过、试过两句，但没有拿它完成过具体任务。",
+        score: 0,
+        dims: { control: 0, breadth: 0, form: 0, role: 0 },
+        evidence: "还没有把 AI 用进真实任务",
+      },
+      {
+        title: "1-2 个",
+        desc: "偶尔让 AI 查资料、改一句话或写一小段内容。",
+        score: 1,
+        dims: { control: 1, breadth: 0, form: 0, role: 0 },
+        evidence: "AI 使用仍以偶发尝试为主",
+      },
+      {
+        title: "3-10 个",
+        desc: "每周会用几次，写作、总结、查询、改稿时会想到 AI。",
+        score: 2,
+        dims: { control: 1, breadth: 1, form: 0, role: 0 },
+        evidence: "已经在常见任务中稳定使用 AI",
+      },
+      {
+        title: "10 个以上",
+        desc: "几乎每天都会用，并经常来回改几轮，直到结果能交付。",
+        score: 3,
+        dims: { control: 2, breadth: 1, form: 1, role: 0 },
+        evidence: "AI 已进入日常多轮协作",
+      },
+    ],
+  },
+  {
+    id: "prompt_context",
+    label: "提示词示例",
+    title: "如果让 AI 写一段活动招募文案，你最可能怎么问？",
+    hint: "选最接近你平时会输入的那一种。这里用具体例子减少“我好像都像”的情况。",
+    options: [
+      {
+        title: "一句话需求",
+        desc: "“帮我写一段活动招募文案。”",
+        score: 0,
+        dims: { control: 0, breadth: 0, form: 0, role: 0 },
+        evidence: "提示方式仍以一句话需求为主",
+      },
+      {
+        title: "说明基本目的",
+        desc: "“帮我写一段小红书风格的活动招募文案，吸引更多人报名。”",
+        score: 1,
+        dims: { control: 1, breadth: 0, form: 0, role: 0 },
+        evidence: "会给 AI 说明任务目的",
+      },
+      {
+        title: "给出背景和格式",
+        desc: "“对象是 25-35 岁职场人，活动是周末 AI 入门课。请写 3 个标题、1 段正文、3 个报名理由，语气专业但不夸张。”",
+        score: 2,
+        dims: { control: 3, breadth: 0, form: 0, role: 1 },
+        evidence: "会用背景、格式和限制条件控制输出",
+      },
+      {
+        title: "给目标、样例和验收标准",
+        desc: "“先判断目标用户最关心什么，再写 3 版。参考语气：清楚、克制、具体。避免焦虑营销。最后按吸引力、可信度、行动明确度自评。”",
+        score: 3,
+        dims: { control: 4, breadth: 0, form: 1, role: 2 },
+        evidence: "会给 AI 样例、标准和自查机制",
+      },
+    ],
+  },
+  {
+    id: "bad_answer",
+    label: "修正能力",
+    title: "AI 写出来很空、很像套话时，你下一句最可能说什么？",
+    hint: "这题看你是否能把一次不满意的回答修成可用结果。",
+    options: [
+      {
+        title: "放弃这次结果",
+        desc: "“算了，还是我自己写吧。”",
+        score: 0,
+        dims: { control: 0, breadth: 0, form: 0, role: 0 },
+        evidence: "遇到低质量回答时容易直接放弃",
+      },
+      {
+        title: "简单要求重写",
+        desc: "“不够好，重新写一版。”",
+        score: 1,
+        dims: { control: 1, breadth: 0, form: 0, role: 0 },
+        evidence: "会通过简单追问改善回答",
+      },
+      {
+        title: "指出具体问题",
+        desc: "“太空了。减少形容词，加入 3 个具体场景，每段不超过 60 字。”",
+        score: 2,
+        dims: { control: 3, breadth: 0, form: 0, role: 1 },
+        evidence: "会用具体修改要求提升输出质量",
+      },
+      {
+        title: "先诊断再重写",
+        desc: "“先列出这版为什么像套话，再问我 3 个必要问题，然后重写，并用清单检查是否具体。”",
+        score: 3,
+        dims: { control: 4, breadth: 0, form: 1, role: 1 },
+        evidence: "会让 AI 诊断问题、补信息并自检",
+      },
+    ],
+  },
+  {
+    id: "breadth",
+    label: "场景范围",
+    title: "过去 30 天，你把 AI 用在过几类任务上？",
+    hint: "按类型算：写作、学习、图片视频、表格数据、方案策划、代码工具、求职简历、生活规划等。",
+    options: [
+      {
+        title: "0-1 类",
+        desc: "主要是查资料、解释概念，像一个更会说话的搜索框。",
+        score: 0,
+        dims: { control: 0, breadth: 0, form: 0, role: 0 },
+        evidence: "AI 使用场景仍集中在简单查询",
+      },
+      {
+        title: "2 类",
+        desc: "例如查资料 + 写文案，或学习 + 改简历。",
+        score: 1,
+        dims: { control: 0, breadth: 1, form: 0, role: 0 },
+        evidence: "AI 主要服务于少数固定任务",
+      },
+      {
+        title: "3-4 类",
+        desc: "已经会在写作、总结、表格、方案、学习、图片或代码里挑着用。",
+        score: 2,
+        dims: { control: 0, breadth: 3, form: 0, role: 0 },
+        evidence: "AI 已覆盖多个工作和学习场景",
+      },
+      {
+        title: "5 类以上",
+        desc: "遇到不熟的任务，也会先让 AI 帮你做初稿、原型、计划或检查。",
+        score: 3,
+        dims: { control: 1, breadth: 4, form: 1, role: 1 },
+        evidence: "会用 AI 跨场景完成探索和原型",
+      },
+    ],
+  },
+  {
+    id: "workflow",
+    label: "流程证据",
+    title: "下面哪一种最像你处理高频任务的方式？",
+    hint: "比如写周报、做选题、整理会议纪要、优化简历这类会重复出现的任务。",
+    options: [
+      {
+        title: "每次临时问",
+        desc: "没有固定步骤，想到什么问什么，做完就结束。",
+        score: 0,
+        dims: { control: 0, breadth: 0, form: 0, role: 0 },
+        evidence: "暂时没有固定 AI 工作流程",
+      },
+      {
+        title: "有一个常用动作",
+        desc: "例如每次先让 AI 列提纲，或最后让 AI 检查错别字。",
+        score: 1,
+        dims: { control: 1, breadth: 0, form: 1, role: 0 },
+        evidence: "已经形成一些个人 AI 使用习惯",
+      },
+      {
+        title: "有 3 步以上固定流程",
+        desc: "例如：给资料 → 列提纲 → 写初稿 → 按清单检查 → 改成最终版。",
+        score: 2,
+        dims: { control: 2, breadth: 0, form: 2, role: 2 },
+        evidence: "已经沉淀固定指令、清单或资料包",
+      },
+      {
+        title: "有可复用工作流",
+        desc: "同一类任务可以稳定复用，资料、步骤、检查标准和输出格式都比较固定。",
+        score: 3,
+        dims: { control: 2, breadth: 1, form: 4, role: 2 },
+        evidence: "AI 已经嵌入完整交付流程",
+      },
+    ],
+  },
+  {
+    id: "agent_tools",
+    label: "Agent 识别",
+    title: "下面哪一组更接近“Agent / 自动执行型 AI”？",
+    hint: "Agent 不只是聊天，它通常能连续执行步骤，或能操作文件、网页、代码、工具。",
+    options: [
+      {
+        title: "ChatGPT、DeepSeek、Kimi",
+        desc: "它们主要是通用聊天模型或聊天产品，不等于 Agent 本身。",
+        score: 0,
+        dims: { control: 0, breadth: 0, form: 0, role: 0 },
+        evidence: "仍容易把聊天模型和自动执行型 AI 混在一起",
+      },
+      {
+        title: "Midjourney、剪映 AI、Gamma",
+        desc: "它们很有用，但更偏单点生成工具，不是典型 Agent 组合。",
+        score: 1,
+        dims: { control: 0, breadth: 0, form: 1, role: 0 },
+        evidence: "能识别部分 AI 工具，但对 Agent 边界还不稳定",
+      },
+      {
+        title: "Notion AI、Grammarly、Canva AI",
+        desc: "它们常嵌在软件里辅助写作或设计，但通常不负责长程自动执行。",
+        score: 1,
+        dims: { control: 0, breadth: 1, form: 1, role: 0 },
+        evidence: "能区分常见 AI 助手，但 Agent 识别仍需加强",
+      },
+      {
+        title: "Cursor Agent、Codex、浏览器 Agent",
+        desc: "这类工具可以改文件、跑代码、操作网页或连续执行多步任务，更接近 Agent。",
+        score: 3,
+        dims: { control: 2, breadth: 1, form: 5, role: 3 },
+        evidence: "能识别自动执行型 AI 和普通聊天工具的区别",
+      },
+    ],
+  },
+  {
+    id: "assets",
+    label: "资产沉淀",
+    title: "你有没有把好用的 AI 问法保存下来，下次继续用？",
+    hint: "比如：一段固定提示词、一份参考案例、一套写作口吻、一张检查清单、一个做事步骤。只看你有没有把好用方法留下来。",
+    options: [
+      {
+        title: "没有",
+        desc: "每次都重新问，之前调好的说法很少再用。",
+        score: 0,
+        dims: { control: 0, breadth: 0, form: 0, role: 0 },
+        evidence: "AI 使用经验还没有形成可复用资产",
+      },
+      {
+        title: "有零散保存",
+        desc: "收藏过几段好用指令，但比较散，靠复制粘贴复用。",
+        score: 1,
+        dims: { control: 1, breadth: 0, form: 0, role: 1 },
+        evidence: "已经保存常用指令",
+      },
+      {
+        title: "有固定模板或参考资料",
+        desc: "比如一份固定提示词、一组案例、品牌语气、常用资料、检查清单。",
+        score: 2,
+        dims: { control: 2, breadth: 1, form: 1, role: 3 },
+        evidence: "已经建立模板、资料包或知识库",
+      },
+      {
+        title: "有别人也能照着用的流程",
+        desc: "别人照着你的模板、资料和步骤，也能得到相对稳定的结果。",
+        score: 3,
+        dims: { control: 2, breadth: 1, form: 3, role: 5 },
+        evidence: "会创造模板、自动化流程或团队可用方法",
+      },
+    ],
+  },
+  {
+    id: "first_reaction",
+    label: "协作设计",
+    title: "如果现在要做一个 PPT，你会怎么让 AI 跟你一起完成？",
+    hint: "用一个具体任务来判断你是拿 AI 找答案，还是会设计协作流程。",
+    options: [
+      {
+        title: "先自己做，卡住再问",
+        desc: "自己先写大纲、找资料、做页面，遇到写不出来或排不好时再问 AI。",
+        score: 0,
+        dims: { control: 0, breadth: 0, form: 0, role: 0 },
+        evidence: "新任务中 AI 多作为事后补救工具",
+      },
+      {
+        title: "先让 AI 给一份大纲",
+        desc: "问“这个主题的 PPT 怎么做”，从它给的大纲和标题里挑一些能用的。",
+        score: 1,
+        dims: { control: 1, breadth: 0, form: 0, role: 0 },
+        evidence: "新任务会先让 AI 提供参考答案",
+      },
+      {
+        title: "先让 AI 拆任务",
+        desc: "让它先拆成目标、受众、页数、结构、每页标题、资料缺口和视觉建议，再分步完成。",
+        score: 2,
+        dims: { control: 2, breadth: 1, form: 1, role: 1 },
+        evidence: "会用 AI 一起拆解目标、步骤和风险",
+      },
+      {
+        title: "先设计人机协作流程",
+        desc: "你先定目标和判断标准，让 AI 负责资料整理、结构初稿、逐页文案和自查，你负责取舍和最终审美；最后沉淀成 PPT 模板。",
+        score: 3,
+        dims: { control: 3, breadth: 1, form: 2, role: 3 },
+        evidence: "会为新任务设计人机协作流程",
+      },
+    ],
+  },
+];
+
+const REPORT_PROMPT = `你是一个中文 AI 协同能力教练。请基于用户的结构化诊断结果，生成一份短报告。
+
+要求：
+1. 中文、直接、鼓励、具体。
+2. 不制造焦虑，不夸大用户能力。
+3. 少讲概念，多给下一步做法。
+4. 输出 Markdown，包含：标题、当前等级画像、四维分析、当前瓶颈、3 条下一步建议、推荐协同方式、结束语。
+5. 不要重新计算等级，只使用输入中的 level。
+6. 报告要自然使用用户的昵称/名字，并结合用户的行业和职业来写建议。`;
+
+const DAILY_REPORT_LIMIT = 3;
+
+const state = {
+  screen: "start",
+  current: 0,
+  answers: {},
+  profile: loadProfile(),
+  diagnosis: null,
+  aiReport: "",
+  loadingReport: false,
+  status: "",
+  profileError: "",
+};
+
+const app = document.querySelector("#app");
+
+function render() {
+  if (state.screen === "start") renderStart();
+  if (state.screen === "profile") renderProfile();
+  if (state.screen === "question") renderQuestion();
+  if (state.screen === "report") renderReport();
+}
+
+function renderStart() {
+  app.innerHTML = `
+    <section class="screen hero-screen">
+      <header class="site-header">
+        <div class="wordmark">AI Collaboration Index</div>
+        <div class="header-meta">8 questions · local scoring · DeepSeek-ready report</div>
+      </header>
+      <div class="hero-grid">
+        <section class="hero-copy-block">
+          <p class="eyebrow">AI 协同能力诊断</p>
+          <h1>判断你现在怎样和 AI 一起工作。</h1>
+          <p class="hero-copy">这不是“你觉得自己厉不厉害”的测试。题目会用具体场景、提示词示例和识别题，判断你目前处在 Lv.0 到 Lv.10 的哪个阶段。</p>
+          <div class="start-actions">
+            <button class="button" data-action="start">开始测试</button>
+            <button class="button secondary" data-action="demo">查看高阶样例</button>
+          </div>
+        </section>
+        <aside class="method-panel" aria-label="测试方法">
+          <div class="method-row">
+            <span>01</span>
+            <div><strong>行为证据</strong><p>看过去 30 天做过什么，而不是靠自我感觉。</p></div>
+          </div>
+          <div class="method-row">
+            <span>02</span>
+            <div><strong>示例判断</strong><p>用具体提示词和 Agent 识别题减少模糊选择。</p></div>
+          </div>
+          <div class="method-row">
+            <span>03</span>
+            <div><strong>四维画像</strong><p>表达、场景、流程、沉淀四个维度分别诊断。</p></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  `;
+}
+
+function renderProfile() {
+  app.innerHTML = `
+    <section class="screen profile-screen">
+      <header class="site-header">
+        <button class="text-button" data-action="restart">AI Collaboration Index</button>
+        <div class="header-meta">profile · better report</div>
+      </header>
+      <div class="profile-layout">
+        <section class="hero-copy-block">
+          <p class="eyebrow">生成更像写给你的报告</p>
+          <h1>先告诉我你是谁。</h1>
+          <p class="hero-copy">DeepSeek 生成报告时，会结合你的名字、行业和职业来写建议。测试本身仍然不需要登录，也不会上传到我们自己的服务器。</p>
+        </section>
+        <section class="profile-card">
+          <label class="field">
+            <span>名字或网名</span>
+            <input id="profileName" autocomplete="name" maxlength="32" placeholder="例如：老张 / Jedi / 小王" value="${escapeHtml(state.profile.name || "")}" />
+          </label>
+          <label class="field">
+            <span>行业</span>
+            <input id="profileIndustry" autocomplete="organization-title" maxlength="40" placeholder="例如：教育培训 / 咨询 / 内容创作 / 电商" value="${escapeHtml(state.profile.industry || "")}" />
+          </label>
+          <label class="field">
+            <span>职业或主要工作</span>
+            <input id="profileRole" maxlength="48" placeholder="例如：创始人 / 运营负责人 / 老师 / 自由职业者" value="${escapeHtml(state.profile.role || "")}" />
+          </label>
+          ${state.profileError ? `<p class="form-error">${escapeHtml(state.profileError)}</p>` : ""}
+          <div class="start-actions">
+            <button class="button" data-action="save-profile">开始答题</button>
+            <button class="button secondary" data-action="restart">返回</button>
+          </div>
+          <p class="privacy-note">公开版如果接入站长自己的 DeepSeek Key，还需要在代理层做限流；当前页面会先做本浏览器的每日 3 次软限制。</p>
+        </section>
+      </div>
+    </section>
+  `;
+}
+
+function renderQuestion() {
+  const question = QUESTIONS[state.current];
+  const selectedIndex = state.answers[question.id];
+  const answeredCount = Object.keys(state.answers).length;
+  const progress = Math.round((answeredCount / QUESTIONS.length) * 100);
+  app.innerHTML = `
+    <section class="screen question-screen">
+      <header class="site-header">
+        <button class="text-button" data-action="restart">AI Collaboration Index</button>
+        <div class="header-meta">${answeredCount}/${QUESTIONS.length} answered</div>
+      </header>
+      <div class="progress-track" aria-hidden="true"><div class="progress-fill" style="width:${progress}%"></div></div>
+      <div class="question-layout">
+        <aside class="question-context">
+          <p class="eyebrow">${question.label}</p>
+          <div class="question-number">${String(state.current + 1).padStart(2, "0")}</div>
+          <p>${question.hint}</p>
+        </aside>
+        <section class="question-main">
+          <h1>${escapeHtml(question.title)}</h1>
+          <div class="options" role="radiogroup" aria-label="${escapeHtml(question.title)}">
+            ${question.options
+              .map(
+                (option, index) => `
+                  <button class="option ${selectedIndex === index ? "selected" : ""}" data-action="answer" data-index="${index}" role="radio" aria-checked="${selectedIndex === index}">
+                    <span class="option-key">${String.fromCharCode(65 + index)}</span>
+                    <span class="option-copy">
+                      <strong>${escapeHtml(option.title)}</strong>
+                      <span>${escapeHtml(option.desc)}</span>
+                    </span>
+                  </button>
+                `
+              )
+              .join("")}
+          </div>
+          <div class="question-actions">
+            <button class="button secondary" data-action="back" ${state.current === 0 ? "disabled" : ""}>上一步</button>
+            <button class="button" data-action="next" ${selectedIndex === undefined ? "disabled" : ""}>${state.current === QUESTIONS.length - 1 ? "生成报告" : "下一题"}</button>
+          </div>
+        </section>
+      </div>
+    </section>
+  `;
+}
+
+function renderReport() {
+  const diagnosis = state.diagnosis || calculateDiagnosis();
+  state.diagnosis = diagnosis;
+  const reportMarkdown = state.aiReport || createFallbackReport(diagnosis);
+  const usage = getReportUsage();
+  app.innerHTML = `
+    <section class="screen report-screen">
+      <header class="site-header">
+        <div class="wordmark">AI Collaboration Index</div>
+        <div class="header-meta">report generated locally</div>
+      </header>
+      <section class="report-hero">
+        <div>
+          <p class="eyebrow">${escapeHtml(state.profile.name || "你的")} 当前等级</p>
+          <h1>${diagnosis.level.name}</h1>
+          <p>${escapeHtml(getProfileLine())}。${diagnosis.level.summary}</p>
+        </div>
+        <div class="score-card">
+          <span>Score</span>
+          <strong>${diagnosis.rawScore}/24</strong>
+          <p>${diagnosis.reportTitle}</p>
+        </div>
+      </section>
+      <section class="report-layout">
+        <main class="report-body">
+          <div class="report-actions">
+            <button class="button" data-action="copy">复制报告</button>
+            <button class="button secondary" data-action="print">打印/保存</button>
+            <button class="button secondary" data-action="restart">重新测试</button>
+          </div>
+          <div class="report-text" id="reportText">${markdownToHtml(reportMarkdown)}</div>
+        </main>
+        <aside class="side-stack">
+          <section class="panel">
+            <h2>四维画像</h2>
+            ${Object.entries(DIMENSIONS)
+              .map(([key, item]) => {
+                const score = diagnosis.dimensionScores[key];
+                return `
+                  <div class="dimension-row">
+                    <div><strong>${item.name}</strong><span>${item.description}</span></div>
+                    <div class="bar" aria-hidden="true"><span class="bar-fill" style="width:${score * 10}%"></span></div>
+                    <em>${score}/10</em>
+                  </div>
+                `;
+              })
+              .join("")}
+          </section>
+          <section class="panel">
+            <h2>关键证据</h2>
+            <ul>${diagnosis.evidence.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+          </section>
+          <section class="panel">
+            <h2>下一步方式</h2>
+            <ul>${diagnosis.collaborationModes.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+          </section>
+          <section class="panel api-panel">
+            <h2>DeepSeek 个性化报告</h2>
+            <label>
+              API Key
+              <input type="password" id="apiKey" autocomplete="off" placeholder="sk-..." />
+            </label>
+            <button class="button secondary" data-action="ai-report" ${state.loadingReport ? "disabled" : ""}>${state.loadingReport ? "生成中..." : "生成 AI 报告"}</button>
+            <p class="status">${state.status || `填入一次 Key 后，本浏览器会记住它；同一昵称今天还可生成 ${usage.remaining} 次。`}</p>
+          </section>
+        </aside>
+      </section>
+    </section>
+  `;
+}
+
+function calculateDiagnosis() {
+  const picked = QUESTIONS.map((question) => {
+    const index = state.answers[question.id] ?? 0;
+    return { question, index, option: question.options[index] };
+  });
+  const rawScore = picked.reduce((sum, item) => sum + item.option.score, 0);
+  const dimensionTotals = Object.fromEntries(Object.keys(DIMENSIONS).map((key) => [key, 0]));
+  const dimensionMax = Object.fromEntries(Object.keys(DIMENSIONS).map((key) => [key, 0]));
+
+  QUESTIONS.forEach((question) => {
+    Object.keys(DIMENSIONS).forEach((key) => {
+      dimensionMax[key] += Math.max(...question.options.map((option) => option.dims[key] || 0));
+    });
+  });
+  picked.forEach(({ option }) => {
+    Object.keys(DIMENSIONS).forEach((key) => {
+      dimensionTotals[key] += option.dims[key] || 0;
+    });
+  });
+
+  const dimensionScores = Object.fromEntries(
+    Object.keys(DIMENSIONS).map((key) => [
+      key,
+      Math.round((dimensionTotals[key] / Math.max(1, dimensionMax[key])) * 10),
+    ])
+  );
+  const answers = Object.fromEntries(picked.map((item) => [item.question.id, item.index]));
+  const level = LEVELS[Math.min(scoreToLevel(rawScore), getLevelCap(answers))];
+  const bottleneckKey = Object.entries(dimensionScores).sort((a, b) => a[1] - b[1])[0][0];
+  const bottleneck = {
+    key: bottleneckKey,
+    name: DIMENSIONS[bottleneckKey].name,
+    text: getBottleneckText(bottleneckKey),
+  };
+
+  return {
+    rawScore,
+    level,
+    dimensionScores,
+    evidence: picked.map((item) => item.option.evidence),
+    bottleneck,
+    nextBreakthrough: getNextBreakthrough(bottleneckKey, level.id),
+    collaborationModes: getCollaborationModes(dimensionScores, level.id),
+    reportTitle: getReportTitle(level.id),
+    selectedAnswers: picked.map((item) => ({
+      question: item.question.title,
+      answer: item.option.title,
+      evidence: item.option.evidence,
+    })),
+  };
+}
+
+function scoreToLevel(score) {
+  if (score <= 0) return 0;
+  if (score <= 3) return 1;
+  if (score <= 6) return 2;
+  if (score <= 9) return 3;
+  if (score <= 12) return 4;
+  if (score <= 15) return 5;
+  if (score <= 17) return 6;
+  if (score <= 19) return 7;
+  if (score <= 21) return 8;
+  if (score <= 23) return 9;
+  return 10;
+}
+
+function getLevelCap(answers) {
+  if (answers.frequency === 0) return 0;
+  let cap = 10;
+  if ((answers.prompt_context || 0) < 1 && (answers.bad_answer || 0) < 1) cap = Math.min(cap, 1);
+  if ((answers.prompt_context || 0) < 2 && (answers.bad_answer || 0) < 2) cap = Math.min(cap, 2);
+  if ((answers.breadth || 0) < 2) cap = Math.min(cap, 4);
+  if ((answers.workflow || 0) < 2 && (answers.assets || 0) < 2) cap = Math.min(cap, 5);
+  if ((answers.agent_tools || 0) < 3) cap = Math.min(cap, 6);
+  if (!((answers.workflow || 0) >= 3 || (answers.assets || 0) >= 3)) cap = Math.min(cap, 7);
+  if (!((answers.first_reaction || 0) >= 3 && (answers.workflow || 0) >= 3)) cap = Math.min(cap, 8);
+  if (!((answers.agent_tools || 0) >= 3 && (answers.assets || 0) >= 3 && (answers.breadth || 0) >= 3)) {
+    cap = Math.min(cap, 9);
+  }
+  return cap;
+}
+
+function getReportTitle(level) {
+  if (level <= 1) return "你还在 AI 协作入口";
+  if (level <= 3) return "你正在学会把需求说清楚";
+  if (level <= 5) return "你已经开始形成固定 AI 工作套路";
+  if (level <= 7) return "你正在进入连续任务和工作流阶段";
+  if (level <= 9) return "AI 协作正在成为你的方法论";
+  return "你已经接近个人 AI 系统形态";
+}
+
+function getBottleneckText(key) {
+  return {
+    control: "当前最值得补的是表达清晰度：用背景、样例、格式和检查标准替代一句话需求。",
+    breadth: "当前最值得补的是场景迁移：把 AI 从查资料扩展到写作、表格、方案、图片、代码或生活规划。",
+    form: "当前最值得补的是流程协作：从单次问答升级到让 AI 参与连续步骤或工具操作。",
+    role: "当前最值得补的是资产沉淀：把好用的一次协作保存成模板、资料包或检查清单。",
+  }[key];
+}
+
+function getNextBreakthrough(key, level) {
+  if (level <= 2) return "先把一句话提问升级成：背景 + 目标 + 输出格式 + 一个参考例子。";
+  return {
+    control: "挑一个高频任务，写一份固定需求模板，并加上检查标准。",
+    breadth: "挑一个低风险的新场景，让 AI 先做一版初稿或计划。",
+    form: "把一个至少三步的任务交给能操作文件、网页或代码的 AI 工具试跑。",
+    role: "把最近一次成功的 AI 对话整理成可复用模板。",
+  }[key];
+}
+
+function getCollaborationModes(scores, level) {
+  const modes = [];
+  if (level <= 2 || scores.control < 6) modes.push("需求模板：背景、目标、格式、限制、检查标准一次讲明白");
+  if (scores.breadth < 6) modes.push("场景扩展：每周挑一个不熟的任务，让 AI 先做初稿");
+  if (scores.form < 6) modes.push("连续任务：把调研、整理、改稿、网页操作或代码任务交给 AI 工具链");
+  if (scores.role < 6) modes.push("资产沉淀：把高频任务整理成模板、资料包或固定流程");
+  if (modes.length < 2) modes.push("复盘机制：记录这次怎么问、结果哪里好、下次如何复用");
+  return modes.slice(0, 3);
+}
+
+function createFallbackReport(diagnosis) {
+  const name = state.profile.name || "你";
+  const profileLine = getProfileLine();
+  return `## ${name} 的 AI 协同等级报告
+
+### 当前等级画像
+${profileLine}。你的当前等级是 **${diagnosis.level.name}**。${diagnosis.level.summary}
+
+### 四维分析
+- 表达清晰度：${diagnosis.dimensionScores.control}/10。${DIMENSIONS.control.description}。
+- 场景迁移度：${diagnosis.dimensionScores.breadth}/10。${DIMENSIONS.breadth.description}。
+- 流程协作度：${diagnosis.dimensionScores.form}/10。${DIMENSIONS.form.description}。
+- 资产沉淀度：${diagnosis.dimensionScores.role}/10。${DIMENSIONS.role.description}。
+
+### 当前瓶颈
+${diagnosis.bottleneck.text}
+
+### 下一步建议
+- ${diagnosis.nextBreakthrough}
+- 选一个你每周都会重复的任务，写成固定指令和检查清单。
+- 做一次 30 分钟复盘：记录 AI 哪一步帮上忙、哪一步需要你重新约束。
+
+### 推荐协同方式
+${diagnosis.collaborationModes.map((mode) => `- ${mode}`).join("\n")}
+
+### 结束语
+不要急着追求满级。${name}，下一次真实任务里，只升级一个动作，你的等级就会开始往上走。`;
+}
+
+function markdownToHtml(markdown) {
+  const lines = escapeHtml(markdown).split("\n");
+  const html = [];
+  let inList = false;
+  lines.forEach((line) => {
+    if (line.startsWith("### ")) {
+      if (inList) html.push("</ul>");
+      inList = false;
+      html.push(`<h3>${formatInline(line.slice(4))}</h3>`);
+    } else if (line.startsWith("## ")) {
+      if (inList) html.push("</ul>");
+      inList = false;
+      html.push(`<h2>${formatInline(line.slice(3))}</h2>`);
+    } else if (line.startsWith("- ")) {
+      if (!inList) html.push("<ul>");
+      inList = true;
+      html.push(`<li>${formatInline(line.slice(2))}</li>`);
+    } else if (line.trim()) {
+      if (inList) html.push("</ul>");
+      inList = false;
+      html.push(`<p>${formatInline(line)}</p>`);
+    }
+  });
+  if (inList) html.push("</ul>");
+  return html.join("");
+}
+
+function formatInline(text) {
+  return text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function getSavedApiKey() {
+  try {
+    return localStorage.getItem("ai_test_deepseek_key") || "";
+  } catch {
+    return "";
+  }
+}
+
+function saveApiKey(apiKey) {
+  try {
+    localStorage.setItem("ai_test_deepseek_key", apiKey);
+  } catch {
+    // Browsers may block localStorage in some file contexts. The current request can still proceed.
+  }
+}
+
+function loadProfile() {
+  try {
+    return JSON.parse(localStorage.getItem("ai_test_profile") || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveProfile(profile) {
+  state.profile = {
+    name: profile.name.trim(),
+    industry: profile.industry.trim(),
+    role: profile.role.trim(),
+  };
+  try {
+    localStorage.setItem("ai_test_profile", JSON.stringify(state.profile));
+  } catch {
+    // The profile remains available in memory for the current session.
+  }
+}
+
+function getProfileLine() {
+  const parts = [];
+  if (state.profile.name) parts.push(state.profile.name);
+  if (state.profile.industry) parts.push(state.profile.industry);
+  if (state.profile.role) parts.push(state.profile.role);
+  return parts.length ? parts.join(" · ") : "这位测试者";
+}
+
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function hashText(text) {
+  let hash = 5381;
+  for (let index = 0; index < text.length; index += 1) {
+    hash = (hash * 33) ^ text.charCodeAt(index);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function getReportUsageKey() {
+  const name = (state.profile.name || "anonymous").trim().toLowerCase();
+  return `ai_test_report_usage_${getTodayKey()}_${hashText(name)}`;
+}
+
+function getReportUsage() {
+  try {
+    const used = Number(localStorage.getItem(getReportUsageKey()) || "0");
+    return { used, remaining: Math.max(0, DAILY_REPORT_LIMIT - used) };
+  } catch {
+    return { used: 0, remaining: DAILY_REPORT_LIMIT };
+  }
+}
+
+function recordReportUsage() {
+  try {
+    const usage = getReportUsage();
+    localStorage.setItem(getReportUsageKey(), String(usage.used + 1));
+  } catch {
+    // Soft limit only; real public protection belongs in the API proxy layer.
+  }
+}
+
+async function generateAiReport(options = {}) {
+  const apiKey = document.querySelector("#apiKey")?.value.trim() || getSavedApiKey();
+  if (!apiKey) {
+    state.status = options.auto
+      ? "已先生成基础报告。填入 DeepSeek API Key 后，可生成模型版个性化报告。"
+      : "请先填入 DeepSeek API Key。";
+    renderReport();
+    return;
+  }
+  const usage = getReportUsage();
+  if (usage.remaining <= 0) {
+    state.status = `${state.profile.name || "这个昵称"} 今天已经生成过 ${DAILY_REPORT_LIMIT} 次 DeepSeek 报告了。明天可以再生成；当前先保留基础报告。`;
+    renderReport();
+    return;
+  }
+  saveApiKey(apiKey);
+  state.loadingReport = true;
+  state.status = `正在请求 DeepSeek 生成报告... 今天剩余 ${usage.remaining} 次`;
+  renderReport();
+  try {
+    const diagnosis = state.diagnosis || calculateDiagnosis();
+    const payload = {
+      profile: state.profile,
+      level: diagnosis.level.name,
+      scores: diagnosis.dimensionScores,
+      evidence: diagnosis.evidence,
+      bottleneck: diagnosis.bottleneck.text,
+      next_breakthrough: diagnosis.nextBreakthrough,
+      collaboration_modes: diagnosis.collaborationModes,
+      selected_answers: diagnosis.selectedAnswers,
+      style: "中文、直接、鼓励、具体、专业克制",
+    };
+    const response = await fetch("https://api.deepseek.com/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [
+          { role: "system", content: REPORT_PROMPT },
+          { role: "user", content: JSON.stringify(payload, null, 2) },
+        ],
+        temperature: 0.7,
+      }),
+    });
+    if (!response.ok) throw new Error(`DeepSeek 请求失败：${response.status}`);
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content) throw new Error("DeepSeek 没有返回报告内容");
+    state.aiReport = content;
+    recordReportUsage();
+    const nextUsage = getReportUsage();
+    state.status = `已生成 DeepSeek 个性化报告。今天还可生成 ${nextUsage.remaining} 次。`;
+  } catch (error) {
+    state.status = `${error.message}。已保留本地模板报告。`;
+  } finally {
+    state.loadingReport = false;
+    renderReport();
+  }
+}
+
+function copyReport() {
+  const diagnosis = state.diagnosis || calculateDiagnosis();
+  const text = state.aiReport || createFallbackReport(diagnosis);
+  navigator.clipboard
+    ?.writeText(text)
+    .then(() => showToast("报告已复制"))
+    .catch(() => showToast("复制失败，请手动选择文本"));
+}
+
+function showToast(message) {
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  window.setTimeout(() => toast.remove(), 1800);
+}
+
+function fillDemoAnswers() {
+  saveProfile({ name: "高阶样例", industry: "内容与产品", role: "AI 工作流设计者" });
+  QUESTIONS.forEach((question) => {
+    const max = Math.max(...question.options.map((option) => option.score));
+    state.answers[question.id] = question.options.findIndex((option) => option.score === max);
+  });
+  state.diagnosis = calculateDiagnosis();
+  state.screen = "report";
+  render();
+}
+
+app.addEventListener("click", (event) => {
+  const target = event.target.closest("[data-action]");
+  if (!target) return;
+  const action = target.dataset.action;
+  if (action === "start") {
+    state.screen = "profile";
+    state.profileError = "";
+    render();
+  }
+  if (action === "save-profile") {
+    const name = document.querySelector("#profileName")?.value || "";
+    const industry = document.querySelector("#profileIndustry")?.value || "";
+    const role = document.querySelector("#profileRole")?.value || "";
+    if (!name.trim()) {
+      state.profileError = "请先填写名字或网名，报告需要用它来称呼你。";
+      renderProfile();
+      return;
+    }
+    saveProfile({ name, industry, role });
+    state.profileError = "";
+    state.screen = "question";
+    state.current = 0;
+    render();
+  }
+  if (action === "demo") fillDemoAnswers();
+  if (action === "answer") {
+    const question = QUESTIONS[state.current];
+    state.answers[question.id] = Number(target.dataset.index);
+    renderQuestion();
+  }
+  if (action === "next") {
+    if (state.current < QUESTIONS.length - 1) {
+      state.current += 1;
+      renderQuestion();
+    } else {
+      state.diagnosis = calculateDiagnosis();
+      state.screen = "report";
+      renderReport();
+      generateAiReport({ auto: true });
+    }
+  }
+  if (action === "back" && state.current > 0) {
+    state.current -= 1;
+    renderQuestion();
+  }
+  if (action === "restart") {
+    state.current = 0;
+    state.answers = {};
+    state.diagnosis = null;
+    state.aiReport = "";
+    state.status = "";
+    state.screen = "start";
+    render();
+  }
+  if (action === "copy") copyReport();
+  if (action === "print") window.print();
+  if (action === "ai-report") generateAiReport();
+});
+
+render();
