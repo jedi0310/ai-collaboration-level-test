@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS submissions (
   name TEXT,
   industry TEXT,
   role TEXT,
+  contact TEXT,
   level TEXT NOT NULL,
   raw_score INTEGER,
   dimension_scores TEXT NOT NULL,

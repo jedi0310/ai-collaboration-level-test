@@ -90,10 +90,10 @@ async function handleReport(request, env) {
 
   await env.DB.prepare(
     `INSERT INTO submissions (
-      id, created_at, name, industry, role, level, raw_score, dimension_scores,
+      id, created_at, name, industry, role, contact, level, raw_score, dimension_scores,
       evidence_json, bottleneck, next_breakthrough, collaboration_modes_json,
       answers_json, report_markdown, source_url, user_agent, ip_hash
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
     .bind(
       submissionId,
@@ -101,6 +101,7 @@ async function handleReport(request, env) {
       text(payload.profile?.name),
       text(payload.profile?.industry),
       text(payload.profile?.role),
+      text(payload.profile?.contact),
       text(payload.level),
       Number(payload.raw_score || 0),
       JSON.stringify(payload.dimension_scores || {}),
@@ -131,7 +132,7 @@ async function handleAdminReports(request, env) {
   const limit = Math.min(Math.max(Number(url.searchParams.get("limit") || 50), 1), 100);
   const offset = Math.max(Number(url.searchParams.get("offset") || 0), 0);
   const result = await env.DB.prepare(
-    `SELECT id, created_at, name, industry, role, level, raw_score,
+    `SELECT id, created_at, name, industry, role, contact, level, raw_score,
       dimension_scores, bottleneck, next_breakthrough, source_url, user_agent, ip_hash
      FROM submissions
      ORDER BY created_at DESC
@@ -157,6 +158,9 @@ function validatePayload(payload) {
   if (!payload.profile || typeof payload.profile !== "object") throw httpError(400, "Missing profile");
   if (!payload.profile.name || String(payload.profile.name).trim().length > 64) {
     throw httpError(400, "Invalid profile name");
+  }
+  if (!payload.profile.industry || String(payload.profile.industry).trim().length > 80) {
+    throw httpError(400, "Invalid industry");
   }
   if (!payload.level || typeof payload.level !== "string") throw httpError(400, "Missing level");
   if (!payload.dimension_scores || typeof payload.dimension_scores !== "object") {

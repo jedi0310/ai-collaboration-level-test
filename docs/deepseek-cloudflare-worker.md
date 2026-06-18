@@ -16,6 +16,13 @@
   - `DEEPSEEK_API_KEY`
   - `ADMIN_TOKEN`
 
+画像字段规则：
+
+- `name` / 名字或网名：必填。
+- `industry` / 行业：必填。
+- `role` / 职位或主要工作：选填。
+- `contact` / 联系方式：选填，手机号或微信号均可；不填也能继续测试。
+
 如果 Worker 名称或 workers.dev 子域不同，需要修改 `app.js` 里的 `WORKER_REPORT_ENDPOINT`。
 
 ## 文件说明
@@ -85,6 +92,7 @@ offset=0
 - `name`
 - `industry`
 - `role`
+- `contact`
 - `level`
 - `raw_score`
 - `dimension_scores`
@@ -100,6 +108,18 @@ offset=0
 
 IP 不保存明文，只保存 hash。
 
+如果线上 D1 已经创建过旧版 `submissions` 表，需要额外运行迁移：
+
+```sql
+ALTER TABLE submissions ADD COLUMN contact TEXT;
+```
+
+迁移文件位置：
+
+```text
+cloudflare-worker/migrations/2026-06-19-add-contact.sql
+```
+
 ## Cloudflare 后台部署步骤
 
 ### 1. 创建或确认 D1 数据库
@@ -113,6 +133,12 @@ ai-test-reports
 ### 2. 运行 D1 schema
 
 在 Cloudflare D1 控制台中找到 `ai-test-reports`，打开控制台或 Query 页面，把 `cloudflare-worker/schema.sql` 的内容粘贴进去运行。
+
+如果表已经存在且缺少 `contact` 字段，请运行：
+
+```sql
+ALTER TABLE submissions ADD COLUMN contact TEXT;
+```
 
 ### 3. 创建 Worker
 
@@ -180,7 +206,7 @@ https://ai-test-deepseek-proxy.jedi0310.workers.dev/api/report
 3. 完成 8 道题。
 4. 页面会自动请求 Worker 生成 DeepSeek 报告。
 5. 如果 Worker 或 DeepSeek 失败，页面会保留基础模板报告。
-6. 点击 `下载/保存 PDF`，在浏览器打印窗口选择保存为 PDF。
+6. 点击 `下载 PDF`，页面会直接生成并下载 PDF；如果生成失败，会自动下载 Markdown 报告。
 7. 用 admin endpoint 检查 D1 是否有记录。
 
 ## Admin endpoint 查看方式
@@ -208,10 +234,11 @@ curl -H "Authorization: Bearer <ADMIN_TOKEN>" \
 - 名字/网名
 - 行业
 - 职业
+- 联系方式（如果填写）
 - 答题结果
 - 生成报告
 
-用途是改进测试体验。页面已提醒访问者不要填写手机号、身份证、详细地址、公司机密等敏感信息。
+用途是改进测试体验和后续反馈。联系方式是选填，不填也能测试；页面已提醒访问者不要填写身份证、详细地址、公司机密等敏感信息。
 
 ## 故障排查
 

@@ -206,9 +206,10 @@ Cloudflare 侧仍需要用户在网页后台完成：
 2. 复制 `cloudflare-worker/worker.js` 到 Worker。
 3. 给 Worker 添加 D1 binding：变量名 `DB`，数据库 `ai-test-reports`。
 4. 在 D1 控制台运行 `cloudflare-worker/schema.sql`。
-5. 在 Worker Secrets 中添加 `DEEPSEEK_API_KEY` 和 `ADMIN_TOKEN`。
-6. 部署 Worker。
-7. 访问 `/api/health` 检查 Worker 是否可用。
+5. 如果旧表已经存在且缺少联系方式字段，运行迁移：`ALTER TABLE submissions ADD COLUMN contact TEXT;`。
+6. 在 Worker Secrets 中添加 `DEEPSEEK_API_KEY` 和 `ADMIN_TOKEN`。
+7. 部署 Worker。
+8. 访问 `/api/health` 检查 Worker 是否可用。
 
 完整步骤见：
 

@@ -352,17 +352,16 @@ function renderStart() {
   app.innerHTML = `
     <section class="screen hero-screen">
       <header class="site-header">
-        <div class="wordmark">AI Collaboration Index</div>
-        <div class="header-meta">8 questions · local scoring · DeepSeek-ready report</div>
+        <div class="wordmark">AI 协同等级测试</div>
+        <div class="header-meta">8 道题 · 看见你的下一步</div>
       </header>
       <div class="hero-grid">
         <section class="hero-copy-block">
           <p class="eyebrow">AI 协同能力诊断</p>
-          <h1>判断你现在怎样和 AI 一起工作。</h1>
-          <p class="hero-copy">这不是“你觉得自己厉不厉害”的测试。题目会用具体场景、提示词示例和识别题，判断你目前处在 Lv.0 到 Lv.10 的哪个阶段。</p>
+          <h1>看看你现在处在 AI 协作的哪一级。</h1>
+          <p class="hero-copy">用 8 个具体场景，了解你当前的 AI 使用水平、四维能力画像，以及下一步最值得升级的动作。</p>
           <div class="start-actions">
             <button class="button" data-action="start">开始测试</button>
-            <button class="button secondary" data-action="demo">查看高阶样例</button>
           </div>
         </section>
         <aside class="method-panel" aria-label="测试方法">
@@ -388,8 +387,8 @@ function renderProfile() {
   app.innerHTML = `
     <section class="screen profile-screen">
       <header class="site-header">
-        <button class="text-button" data-action="restart">AI Collaboration Index</button>
-        <div class="header-meta">profile · better report</div>
+        <button class="text-button" data-action="restart">AI 协同等级测试</button>
+        <div class="header-meta">填写后报告更贴近你</div>
       </header>
       <div class="profile-layout">
         <section class="hero-copy-block">
@@ -400,22 +399,26 @@ function renderProfile() {
         <section class="profile-card">
           <label class="field">
             <span>名字或网名</span>
-            <input id="profileName" autocomplete="name" maxlength="32" placeholder="例如：老张 / Jedi / 小王" value="${escapeHtml(state.profile.name || "")}" />
+            <input id="profileName" autocomplete="name" maxlength="32" placeholder="请输入你的名字或网名" value="${escapeHtml(state.profile.name || "")}" />
           </label>
           <label class="field">
             <span>行业</span>
             <input id="profileIndustry" autocomplete="organization-title" maxlength="40" placeholder="例如：教育培训 / 咨询 / 内容创作 / 电商" value="${escapeHtml(state.profile.industry || "")}" />
           </label>
           <label class="field">
-            <span>职业或主要工作</span>
+            <span>职位或主要工作（选填）</span>
             <input id="profileRole" maxlength="48" placeholder="例如：创始人 / 运营负责人 / 老师 / 自由职业者" value="${escapeHtml(state.profile.role || "")}" />
+          </label>
+          <label class="field">
+            <span>联系方式（选填）</span>
+            <input id="profileContact" maxlength="64" placeholder="手机号或微信号（选填）" value="${escapeHtml(state.profile.contact || "")}" />
           </label>
           ${state.profileError ? `<p class="form-error">${escapeHtml(state.profileError)}</p>` : ""}
           <div class="start-actions">
             <button class="button" data-action="save-profile">开始答题</button>
             <button class="button secondary" data-action="restart">返回</button>
           </div>
-          <p class="privacy-note">隐私提示：会保存你的名字/网名、行业、职业、答题结果和生成报告，用于改进测试体验。请不要填写手机号、身份证、详细地址、公司机密等敏感信息。测试阶段暂不限制生成次数。</p>
+          <p class="privacy-note">隐私提示：会保存你的名字/网名、行业、选填职位、答题结果和生成报告；如果填写联系方式，也会一起保存，用于后续反馈或沟通。不填职位和联系方式也能继续测试。请不要填写身份证、详细地址、公司机密等敏感信息。</p>
         </section>
       </div>
     </section>
@@ -430,8 +433,8 @@ function renderQuestion() {
   app.innerHTML = `
     <section class="screen question-screen">
       <header class="site-header">
-        <button class="text-button" data-action="restart">AI Collaboration Index</button>
-        <div class="header-meta">${answeredCount}/${QUESTIONS.length} answered</div>
+        <button class="text-button" data-action="restart">AI 协同等级测试</button>
+        <div class="header-meta">已完成 ${answeredCount}/${QUESTIONS.length}</div>
       </header>
       <div class="progress-track" aria-hidden="true"><div class="progress-fill" style="width:${progress}%"></div></div>
       <div class="question-layout">
@@ -474,8 +477,8 @@ function renderReport() {
   app.innerHTML = `
     <section class="screen report-screen">
       <header class="site-header">
-        <div class="wordmark">AI Collaboration Index</div>
-        <div class="header-meta">AI report via secure proxy</div>
+        <div class="wordmark">AI 协同等级测试</div>
+        <div class="header-meta">你的测试报告</div>
       </header>
       <section class="report-hero">
         <div>
@@ -493,7 +496,7 @@ function renderReport() {
         <main class="report-body">
           <div class="report-actions">
             <button class="button" data-action="copy">复制报告</button>
-            <button class="button secondary" data-action="print">下载/保存 PDF</button>
+            <button class="button secondary" data-action="download-pdf">下载 PDF</button>
             <button class="button secondary" data-action="restart">重新测试</button>
           </div>
           <div class="report-text" id="reportText">${markdownToHtml(reportMarkdown)}</div>
@@ -526,7 +529,7 @@ function renderReport() {
             <h2>DeepSeek 个性化报告</h2>
             <button class="button secondary" data-action="ai-report" ${state.loadingReport ? "disabled" : ""}>${state.loadingReport ? "生成中..." : "重新生成 AI 报告"}</button>
             <p class="status">${state.status || "公开测试版通过 Cloudflare Worker 安全生成报告；访问者不需要填写 API Key。"}</p>
-            <p class="privacy-note">生成时会保存画像、答题结果和报告，供站长改进测试。请勿填写敏感个人信息或公司机密。</p>
+            <p class="privacy-note">生成时会保存画像、答题结果、报告和你选填的联系方式，供站长改进测试和后续反馈。请勿填写身份证、详细地址、公司机密等敏感信息。</p>
           </section>
         </aside>
       </section>
@@ -735,9 +738,10 @@ function loadProfile() {
 
 function saveProfile(profile) {
   state.profile = {
-    name: profile.name.trim(),
-    industry: profile.industry.trim(),
-    role: profile.role.trim(),
+    name: String(profile.name || "").trim(),
+    industry: String(profile.industry || "").trim(),
+    role: String(profile.role || "").trim(),
+    contact: String(profile.contact || "").trim(),
   };
   try {
     localStorage.setItem("ai_test_profile", JSON.stringify(state.profile));
@@ -856,23 +860,82 @@ function copyReport() {
     .catch(() => showToast("复制失败，请手动选择文本"));
 }
 
+async function downloadPdf() {
+  const diagnosis = state.diagnosis || calculateDiagnosis();
+  const markdown = state.aiReport || createFallbackReport(diagnosis);
+  const filenameBase = getReportFilenameBase(diagnosis);
+  let exportNode = null;
+  try {
+    if (!window.html2pdf) throw new Error("PDF 组件未加载");
+    exportNode = buildPdfExportNode(diagnosis, markdown);
+    document.body.appendChild(exportNode);
+    await window
+      .html2pdf()
+      .set({
+        margin: [10, 10, 12, 10],
+        filename: `${filenameBase}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        pagebreak: { mode: ["css", "legacy"] },
+      })
+      .from(exportNode)
+      .save();
+    showToast("PDF 已开始下载");
+  } catch (error) {
+    downloadMarkdown(markdown, `${filenameBase}.md`);
+    showToast("PDF 生成失败，已改为下载 Markdown 报告");
+  } finally {
+    exportNode?.remove();
+  }
+}
+
+function buildPdfExportNode(diagnosis, markdown) {
+  const node = document.createElement("article");
+  node.className = "pdf-export";
+  node.innerHTML = `
+    <header>
+      <p>AI 协同等级测试报告</p>
+      <h1>${escapeHtml(diagnosis.level.name)}</h1>
+      <div>${escapeHtml(getProfileLine())}</div>
+    </header>
+    <section class="pdf-score">
+      <strong>${diagnosis.rawScore}/24</strong>
+      <span>${escapeHtml(diagnosis.reportTitle)}</span>
+    </section>
+    <section class="pdf-content">${markdownToHtml(markdown)}</section>
+  `;
+  return node;
+}
+
+function downloadMarkdown(markdown, filename) {
+  const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function getReportFilenameBase(diagnosis) {
+  const name = state.profile.name || "AI协同等级测试";
+  const level = diagnosis.level.name.replace(/\s+/g, "-");
+  return `${sanitizeFilename(name)}-${sanitizeFilename(level)}-报告`;
+}
+
+function sanitizeFilename(value) {
+  return String(value).replace(/[\\/:*?"<>|]/g, "").slice(0, 48) || "report";
+}
+
 function showToast(message) {
   const toast = document.createElement("div");
   toast.className = "toast";
   toast.textContent = message;
   document.body.appendChild(toast);
   window.setTimeout(() => toast.remove(), 1800);
-}
-
-function fillDemoAnswers() {
-  saveProfile({ name: "高阶样例", industry: "内容与产品", role: "AI 工作流设计者" });
-  QUESTIONS.forEach((question) => {
-    const max = Math.max(...question.options.map((option) => option.score));
-    state.answers[question.id] = question.options.findIndex((option) => option.score === max);
-  });
-  state.diagnosis = calculateDiagnosis();
-  state.screen = "report";
-  render();
 }
 
 app.addEventListener("click", (event) => {
@@ -888,18 +951,23 @@ app.addEventListener("click", (event) => {
     const name = document.querySelector("#profileName")?.value || "";
     const industry = document.querySelector("#profileIndustry")?.value || "";
     const role = document.querySelector("#profileRole")?.value || "";
+    const contact = document.querySelector("#profileContact")?.value || "";
     if (!name.trim()) {
       state.profileError = "请先填写名字或网名，报告需要用它来称呼你。";
       renderProfile();
       return;
     }
-    saveProfile({ name, industry, role });
+    if (!industry.trim()) {
+      state.profileError = "请填写行业，这会帮助报告给出更贴近你的建议。";
+      renderProfile();
+      return;
+    }
+    saveProfile({ name, industry, role, contact });
     state.profileError = "";
     state.screen = "question";
     state.current = 0;
     render();
   }
-  if (action === "demo") fillDemoAnswers();
   if (action === "answer") {
     const question = QUESTIONS[state.current];
     state.answers[question.id] = Number(target.dataset.index);
@@ -930,7 +998,7 @@ app.addEventListener("click", (event) => {
     render();
   }
   if (action === "copy") copyReport();
-  if (action === "print") window.print();
+  if (action === "download-pdf") downloadPdf();
   if (action === "ai-report") generateAiReport();
 });
 
