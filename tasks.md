@@ -9,7 +9,7 @@
 - [x] 补录总控误接管期间的功能变更和项目线程承接规则。
 - [ ] 本地打开静态 MVP 做人工体验验收。
 - [ ] 验证用户画像填写、报告称呼和每日 3 次生成限制。
-- [ ] GitHub push 因本机未认证失败，等待用户完成 GitHub 命令行认证或改用网页上传。
+- [ ] SSH 已认证成功，等待切换 remote 并 push 到 GitHub。
 
 ## 待办池
 
@@ -31,7 +31,7 @@
 
 ## 进行中
 
-- [ ] GitHub Pages 部署等待用户处理 GitHub HTTPS 认证后重试 push。
+- [ ] GitHub Pages 部署正在通过 SSH remote 推送。
 
 ## 已完成
 
@@ -43,6 +43,9 @@
 - [x] 在项目线程内补录总控越权修改期间的题目、画像、报告、限次和文档状态。
 - [x] 检查静态文件适配 GitHub Pages，记录 git/gh 状态。
 - [x] 用户已注册 GitHub：`jedi0310`；已记录推荐部署路径和待确认事项。
+- [x] 已检查 SSH GitHub 认证：当前为 `Permission denied (publickey)`，本机未发现 `.pub` 公钥。
+- [x] 用户已添加 SSH 公钥到 GitHub，SSH 认证验证成功。
+- [x] 新增 GitHub SSH key 使用说明。
 - [x] 已初始化本地 git、创建首次提交、添加 GitHub remote；push 卡在 GitHub 认证。
 
 ## 暂停 / 以后再说

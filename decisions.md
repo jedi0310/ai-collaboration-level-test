@@ -199,3 +199,63 @@ fatal: could not read Username for 'https://github.com': Device not configured
 - 用户在系统弹窗、浏览器或终端完成 GitHub 登录后，项目线程重试 `git push -u origin main`。
 - 用户安装并登录 GitHub CLI 后再推送；项目线程不自动安装。
 - 用户改用 GitHub 网页上传项目文件。
+
+## 2026-06-18 用户选择命令行认证方案 B
+
+### 决策
+
+用户明确选择继续配置命令行 push，不走网页手动上传。项目线程已检查当前 git 和 SSH 状态。
+
+### 当前状态
+
+- 本地 git 工作区干净。
+- remote 仍是 HTTPS：`https://github.com/jedi0310/ai-collaboration-level-test.git`。
+- 最近提交：
+  - `902b28d Record GitHub Pages deployment blocker`
+  - `dc5a0f8 Deploy AI collaboration level test`
+- SSH 到 GitHub 的结果是：
+
+```text
+git@github.com: Permission denied (publickey).
+```
+
+- `/Users/jedizhang/.ssh` 下未检测到 `.pub` 公钥文件。
+
+### 下一步
+
+推荐用户授权生成新的 ed25519 SSH key，并由用户把公钥添加到 GitHub。项目线程不得未授权生成 SSH key，不得读取私钥，不得索要或记录 GitHub 密码、验证码、token。
+
+如果用户完成公钥添加，项目线程可在确认后执行：
+
+```bash
+git remote set-url origin git@github.com:jedi0310/ai-collaboration-level-test.git
+git push -u origin main
+```
+
+HTTPS/PAT 可作为备选，但 PAT 应由用户自行输入到系统凭据弹窗或凭据管理器，不能发给项目线程。
+
+## 2026-06-18 SSH 认证成功
+
+### 决策
+
+用户已生成 SSH key，并把公钥添加到 GitHub。项目线程执行 `ssh -T git@github.com`，GitHub 返回：
+
+```text
+Hi jedi0310! You've successfully authenticated, but GitHub does not provide shell access.
+```
+
+这表示 SSH 认证成功。
+
+### 下一步
+
+本项目 remote 可从 HTTPS 切换为 SSH：
+
+```text
+git@github.com:jedi0310/ai-collaboration-level-test.git
+```
+
+随后使用 `git push -u origin main` 推送当前本地提交。
+
+### 安全记录
+
+项目线程不读取、不输出、不记录私钥 `/Users/jedizhang/.ssh/id_ed25519`。项目已新增 `docs/github-ssh-key-guide.md`，说明 SSH key、公钥添加、后续更新和故障排查。

@@ -96,6 +96,91 @@ fatal: could not read Username for 'https://github.com': Device not configured
 2. 用户安装并登录 GitHub CLI 后再推送；当前项目线程不会自动安装 `gh`。
 3. 用户改用 GitHub 网页上传文件。
 
+## 方案 B：命令行认证状态
+
+用户已选择继续配置命令行 push，不走网页手动上传。
+
+当前检查结果：
+
+- 本地 git 工作区干净。
+- remote 仍是 HTTPS：`https://github.com/jedi0310/ai-collaboration-level-test.git`。
+- 最近提交：
+  - `902b28d Record GitHub Pages deployment blocker`
+  - `dc5a0f8 Deploy AI collaboration level test`
+- SSH 到 GitHub 的联网检查结果：
+
+```text
+git@github.com: Permission denied (publickey).
+```
+
+含义：能连到 GitHub，但当前没有被 GitHub 接受的 SSH key。
+
+本机 `/Users/jedizhang/.ssh` 下没有检测到 `.pub` 公钥文件。当前不能直接改 SSH remote 并 push。
+
+更新：用户已生成 SSH key 并把公钥添加到 GitHub。项目线程验证 SSH 成功：
+
+```text
+Hi jedi0310! You've successfully authenticated, but GitHub does not provide shell access.
+```
+
+后续 remote 将切换为：
+
+```text
+git@github.com:jedi0310/ai-collaboration-level-test.git
+```
+
+### 推荐下一步：生成新的 SSH key
+
+需要用户授权后，项目线程才可以生成新的 ed25519 SSH key。建议命令：
+
+```bash
+ssh-keygen -t ed25519 -C "jedi0310@gmail.com" -f /Users/jedizhang/.ssh/id_ed25519
+```
+
+注意：
+
+- 这会在 `/Users/jedizhang/.ssh` 写入新的私钥和公钥。
+- 项目线程可以读取并展示公钥内容，用于让用户复制到 GitHub。
+- 项目线程绝不读取、展示或记录私钥。
+
+用户把公钥添加到 GitHub 的步骤：
+
+1. 打开 GitHub。
+2. 进入右上角头像 -> `Settings`。
+3. 进入 `SSH and GPG keys`。
+4. 点击 `New SSH key`。
+5. Title 可填：`MacBook AI测试网站部署`。
+6. Key type 选 `Authentication Key`。
+7. 粘贴 `.pub` 公钥内容。
+8. 保存。
+
+添加后，项目线程可再次检查：
+
+```bash
+ssh -T git@github.com
+```
+
+如果成功，再经用户确认执行：
+
+```bash
+git remote set-url origin git@github.com:jedi0310/ai-collaboration-level-test.git
+git push -u origin main
+```
+
+### HTTPS / PAT 备选方案
+
+也可以继续使用 HTTPS remote，但 GitHub 现在不支持用账号密码直接推送，通常需要 Personal Access Token 或系统凭据管理器。
+
+不推荐把 PAT 发给项目线程。若使用 PAT，应由用户自己在系统凭据弹窗、Git Credential Manager 或终端认证提示中输入，项目线程不接收、不记录、不保存 token。
+
+## SSH key 使用文档
+
+SSH key 的使用、私钥/公钥区别、GitHub 添加公钥步骤、以后如何更新网站，见：
+
+```text
+docs/github-ssh-key-guide.md
+```
+
 ## 用户现在需要确认
 
 继续命令行部署前，请用户确认：
