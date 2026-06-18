@@ -9,7 +9,7 @@
 - [x] 补录总控误接管期间的功能变更和项目线程承接规则。
 - [ ] 本地打开静态 MVP 做人工体验验收。
 - [ ] 验证用户画像填写、报告称呼和测试阶段不限次生成报告链路。
-- [ ] 合并远端已有提交后继续 push，并开启 GitHub Pages。
+- [ ] 在 GitHub 仓库 Settings -> Pages 开启 GitHub Pages。
 
 ## 待办池
 
@@ -33,7 +33,7 @@
 
 ## 进行中
 
-- [ ] GitHub Pages 部署：解决远端合并冲突，重新 push。
+- [ ] GitHub Pages 部署：等待在 GitHub 网页开启 Pages。
 
 ## 已完成
 
@@ -51,6 +51,7 @@
 - [x] 已将 remote 切换为 SSH；push 因远端已有提交被拒绝，未强推。
 - [x] 已初始化本地 git、创建首次提交、添加 GitHub remote；push 卡在 GitHub 认证。
 - [x] 用户已确认允许合并远端已有提交，不强推。
+- [x] 已解决远端合并冲突，使用 SSH 成功推送到 `jedi0310/ai-collaboration-level-test`。
 
 ## 暂停 / 以后再说
 

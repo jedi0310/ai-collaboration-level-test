@@ -188,6 +188,38 @@ tasks.md
 
 当前不实现 Worker 或 Vercel Function，只记录为正式发布前的架构待办。
 
+## SSH 合并与 push 成功记录
+
+2026-06-18，用户确认允许合并远端已有提交且不强推后，项目线程完成：
+
+```bash
+git pull origin main --allow-unrelated-histories --no-rebase
+git push -u origin main
+```
+
+pull 后出现项目记录文档冲突，已按“本地项目线程记录为主，保留远端提交历史”的原则解决。随后通过 SSH push 成功。
+
+当前远程仓库：
+
+```text
+git@github.com:jedi0310/ai-collaboration-level-test.git
+```
+
+GitHub Pages 下一步设置：
+
+1. 打开 `https://github.com/jedi0310/ai-collaboration-level-test`。
+2. 进入 `Settings`。
+3. 左侧进入 `Pages`。
+4. Source 选择 `Deploy from a branch`。
+5. Branch 选择 `main`，Folder 选择 `/ (root)`。
+6. 点击 `Save`。
+7. 等待 1 到 3 分钟。
+8. 打开：
+
+```text
+https://jedi0310.github.io/ai-collaboration-level-test/
+```
+
 ### 推荐下一步：生成新的 SSH key
 
 需要用户授权后，项目线程才可以生成新的 ed25519 SSH key。建议命令：
