@@ -13,14 +13,16 @@
 - 前端负责评分、维度诊断和行为证据提取。
 - 基础模板报告可离线生成。
 - 测试前会收集用户名字/网名、行业和职业，用于生成更个性化的报告。
-- 用户可手动填写自己的 DeepSeek API Key 生成个性化报告。
+- 公开测试版由 Cloudflare Worker 代理 DeepSeek，访问者不需要填写 API Key。
 - 测试阶段已临时关闭 DeepSeek 报告生成次数限制，方便多次跑完整链路。
+- 生成报告会保存用户画像、答题结果和报告到 Cloudflare D1，用于改进测试体验。
 - DeepSeek 请求失败时会保留基础模板报告。
-- 第 8 题完成后按钮为“生成报告”：如果本浏览器已保存 DeepSeek Key，会自动请求模型报告；否则先显示基础报告。
+- 第 8 题完成后按钮为“生成报告”：前端会先显示基础报告，再请求 Worker 生成 DeepSeek 个性化报告。
+- 报告页提供“下载/保存 PDF”，使用浏览器打印保存能力，不引入依赖。
 - 网站可直接本地打开，手机端和桌面端都可使用，后续优先部署到 GitHub Pages。
 - 题目已改为更客观的行为题、示例题和 Agent 识别题，降低“小白不知道怎么选”的问题。
 - 界面改为参考 Anthropic 官网的克制产品风格，去掉幼稚化图形和关卡点位。
-- 不做传统后端、不做登录、不保存用户数据。
+- 不做登录；公开测试版会通过 Cloudflare D1 保存测试结果和报告，作为站长改进测试的后台记录。
 
 ## 本地使用
 
@@ -32,11 +34,17 @@ styles.css
 app.js
 ```
 
-如果要测试 DeepSeek 个性化报告，请在报告页手动填写自己的 API Key。Key 会保存在当前浏览器本地，项目代码和文档不会内置任何真实 API Key。
+公开测试版不让访问者填写 DeepSeek API Key。前端会请求 Cloudflare Worker：
+
+```text
+https://ai-test-deepseek-proxy.jedi0310.workers.dev/api/report
+```
+
+DeepSeek API Key 只能配置在 Cloudflare Worker Secret / 环境变量里，项目代码和文档不会内置任何真实 API Key。
 
 测试阶段暂不限制 DeepSeek 报告生成次数。正式公开传播前，需要再决定限流策略。
 
-公开传播版如果使用站长自己的 DeepSeek Key，不能把 Key 写进 GitHub Pages 前端代码，需要在 Cloudflare Worker 或 Vercel Function 这类代理层通过环境变量保存 Key，并在代理层做真实限流、日志和错误处理。
+公开传播版使用站长自己的 DeepSeek Key 时，不能把 Key 写进 GitHub Pages 前端代码，需要在 Cloudflare Worker 通过环境变量保存 Key。当前 MVP 使用 Cloudflare D1 存 submissions 和 reports，后续可在代理层增加真实限流、统计和后台页面。
 
 ## 后续用途
 
@@ -62,6 +70,8 @@ app.js
 - `decisions.md`：决策记录。
 - `docs/plans/2026-06-18-ai-collaboration-level-test-design.md`：当前产品和技术设计计划。
 - `docs/deployment-github-pages.md`：GitHub 注册后的小白部署步骤和命令行部署前确认项。
+- `docs/deepseek-cloudflare-worker.md`：Cloudflare Worker、D1、Secrets 和后台接口部署说明。
+- `cloudflare-worker/`：Worker 代理模板、D1 schema 和 wrangler 示例。
 
 ## 工作原则
 

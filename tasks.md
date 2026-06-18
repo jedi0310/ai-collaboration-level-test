@@ -8,8 +8,9 @@
 - [x] 定稿 DeepSeek 个性化报告 prompt 和输出结构。
 - [x] 补录总控误接管期间的功能变更和项目线程承接规则。
 - [ ] 本地打开静态 MVP 做人工体验验收。
-- [ ] 验证用户画像填写、报告称呼和测试阶段不限次生成报告链路。
+- [ ] 验证公开测试版 Worker 报告链路：画像、8 题、Worker 生成、D1 存档、PDF 保存。
 - [ ] 在 GitHub 仓库 Settings -> Pages 开启 GitHub Pages。
+- [ ] 在 Cloudflare Worker 后台配置 D1 binding 和 secrets，并部署 Worker。
 
 ## 待办池
 
@@ -18,11 +19,14 @@
 - [x] 明确是否需要部署：优先 GitHub Pages。
 - [x] 实现本地评分和四维诊断。
 - [x] 接入 DeepSeek API Key 输入模式。
+- [x] 公开测试版改为 Cloudflare Worker 代理 DeepSeek，访问者不再填写 API Key。
 - [x] 增加用户名字/网名、行业、职业填写，用于个性化报告。
 - [x] 增加同一浏览器同一昵称每日 3 次 DeepSeek 报告软限制。
 - [x] 测试阶段临时关闭前端每日 3 次软限制，方便反复跑链路。
 - [ ] 正式发布前重新决定限流策略。
-- [ ] 评估并实现 Cloudflare Worker 或 Vercel Function 作为公开版 DeepSeek API 代理。
+- [x] 新增 Cloudflare Worker 代理模板和 D1 schema。
+- [ ] 在 Cloudflare 后台完成 Worker、D1 binding、Secrets 和线上联调。
+- [ ] 正式发布前评估后台页面和真实限流策略。
 - [x] 完成 GitHub Pages 本地部署适配检查。
 - [x] 新增 GitHub Pages 小白部署指南。
 - [x] 增加 DeepSeek API 失败时的模板报告 fallback。
@@ -30,10 +34,12 @@
 - [x] 重构题目为行为题、提示词示例题、Agent 识别题，减少模糊自评。
 - [x] 改为 Anthropic 式克制产品风格，移除幼稚化图形和重叠关卡图。
 - [x] 将最后一步改为“生成报告”，有 Key 时自动调用 DeepSeek，无 Key 时回退基础报告。
+- [x] 报告页新增“下载/保存 PDF”按钮，使用浏览器打印保存。
+- [x] 新增公开测试版隐私提示：保存画像、答题结果和报告，提醒不要填写敏感信息。
 
 ## 进行中
 
-- [ ] GitHub Pages 部署：等待在 GitHub 网页开启 Pages。
+- [ ] GitHub Pages + Cloudflare Worker 公开测试版部署联调。
 
 ## 已完成
 

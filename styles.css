@@ -606,11 +606,51 @@ input:focus-visible {
 @media print {
   .api-panel,
   .report-actions,
-  .site-header {
+  .site-header,
+  .toast {
     display: none !important;
+  }
+
+  :root {
+    --bg: #fff;
+    --surface: #fff;
+    --ink: #111;
+    --muted: #444;
+    --line: #d0d0d0;
+  }
+
+  @page {
+    margin: 16mm;
   }
 
   body {
     background: #fff;
+  }
+
+  .screen {
+    width: 100%;
+    min-height: auto;
+    padding: 0;
+  }
+
+  .report-hero,
+  .report-layout {
+    display: block;
+    padding: 0 0 18px;
+  }
+
+  .score-card,
+  .report-body,
+  .panel {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+
+  .side-stack {
+    margin-top: 18px;
+  }
+
+  .report-text {
+    margin-top: 16px;
   }
 }

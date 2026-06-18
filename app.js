@@ -322,18 +322,10 @@ const QUESTIONS = [
   },
 ];
 
-const REPORT_PROMPT = `你是一个中文 AI 协同能力教练。请基于用户的结构化诊断结果，生成一份短报告。
-
-要求：
-1. 中文、直接、鼓励、具体。
-2. 不制造焦虑，不夸大用户能力。
-3. 少讲概念，多给下一步做法。
-4. 输出 Markdown，包含：标题、当前等级画像、四维分析、当前瓶颈、3 条下一步建议、推荐协同方式、结束语。
-5. 不要重新计算等级，只使用输入中的 level。
-6. 报告要自然使用用户的昵称/名字，并结合用户的行业和职业来写建议。`;
-
 const DAILY_REPORT_LIMIT = 3;
 const REPORT_LIMIT_ENABLED = false;
+const APP_VERSION = "public-worker-mvp-2026-06-18";
+const WORKER_REPORT_ENDPOINT = "https://ai-test-deepseek-proxy.jedi0310.workers.dev/api/report";
 
 const state = {
   screen: "start",
@@ -403,7 +395,7 @@ function renderProfile() {
         <section class="hero-copy-block">
           <p class="eyebrow">生成更像写给你的报告</p>
           <h1>先告诉我你是谁。</h1>
-          <p class="hero-copy">DeepSeek 生成报告时，会结合你的名字、行业和职业来写建议。测试本身仍然不需要登录，也不会上传到我们自己的服务器。</p>
+          <p class="hero-copy">DeepSeek 生成报告时，会结合你的名字、行业和职业来写建议。公开测试版会保存测试结果和生成报告，用于改进体验。</p>
         </section>
         <section class="profile-card">
           <label class="field">
@@ -423,7 +415,7 @@ function renderProfile() {
             <button class="button" data-action="save-profile">开始答题</button>
             <button class="button secondary" data-action="restart">返回</button>
           </div>
-          <p class="privacy-note">测试阶段暂不限制 DeepSeek 报告生成次数；公开版如果接入站长自己的 DeepSeek Key，需要在代理层做真实限流。</p>
+          <p class="privacy-note">隐私提示：会保存你的名字/网名、行业、职业、答题结果和生成报告，用于改进测试体验。请不要填写手机号、身份证、详细地址、公司机密等敏感信息。测试阶段暂不限制生成次数。</p>
         </section>
       </div>
     </section>
@@ -483,7 +475,7 @@ function renderReport() {
     <section class="screen report-screen">
       <header class="site-header">
         <div class="wordmark">AI Collaboration Index</div>
-        <div class="header-meta">report generated locally</div>
+        <div class="header-meta">AI report via secure proxy</div>
       </header>
       <section class="report-hero">
         <div>
@@ -501,7 +493,7 @@ function renderReport() {
         <main class="report-body">
           <div class="report-actions">
             <button class="button" data-action="copy">复制报告</button>
-            <button class="button secondary" data-action="print">打印/保存</button>
+            <button class="button secondary" data-action="print">下载/保存 PDF</button>
             <button class="button secondary" data-action="restart">重新测试</button>
           </div>
           <div class="report-text" id="reportText">${markdownToHtml(reportMarkdown)}</div>
@@ -532,12 +524,9 @@ function renderReport() {
           </section>
           <section class="panel api-panel">
             <h2>DeepSeek 个性化报告</h2>
-            <label>
-              API Key
-              <input type="password" id="apiKey" autocomplete="off" placeholder="sk-..." />
-            </label>
-            <button class="button secondary" data-action="ai-report" ${state.loadingReport ? "disabled" : ""}>${state.loadingReport ? "生成中..." : "生成 AI 报告"}</button>
-            <p class="status">${state.status || "填入一次 Key 后，本浏览器会记住它；测试阶段可多次生成报告。"}</p>
+            <button class="button secondary" data-action="ai-report" ${state.loadingReport ? "disabled" : ""}>${state.loadingReport ? "生成中..." : "重新生成 AI 报告"}</button>
+            <p class="status">${state.status || "公开测试版通过 Cloudflare Worker 安全生成报告；访问者不需要填写 API Key。"}</p>
+            <p class="privacy-note">生成时会保存画像、答题结果和报告，供站长改进测试。请勿填写敏感个人信息或公司机密。</p>
           </section>
         </aside>
       </section>
@@ -591,7 +580,9 @@ function calculateDiagnosis() {
     reportTitle: getReportTitle(level.id),
     selectedAnswers: picked.map((item) => ({
       question: item.question.title,
+      questionId: item.question.id,
       answer: item.option.title,
+      answerDetail: item.option.desc,
       evidence: item.option.evidence,
     })),
   };
@@ -734,22 +725,6 @@ function escapeHtml(value) {
     .replace(/'/g, "&#039;");
 }
 
-function getSavedApiKey() {
-  try {
-    return localStorage.getItem("ai_test_deepseek_key") || "";
-  } catch {
-    return "";
-  }
-}
-
-function saveApiKey(apiKey) {
-  try {
-    localStorage.setItem("ai_test_deepseek_key", apiKey);
-  } catch {
-    // Browsers may block localStorage in some file contexts. The current request can still proceed.
-  }
-}
-
 function loadProfile() {
   try {
     return JSON.parse(localStorage.getItem("ai_test_profile") || "{}");
@@ -815,63 +790,38 @@ function recordReportUsage() {
 }
 
 async function generateAiReport(options = {}) {
-  const apiKey = document.querySelector("#apiKey")?.value.trim() || getSavedApiKey();
-  if (!apiKey) {
-    state.status = options.auto
-      ? "已先生成基础报告。填入 DeepSeek API Key 后，可生成模型版个性化报告。"
-      : "请先填入 DeepSeek API Key。";
-    renderReport();
-    return;
-  }
   const usage = getReportUsage();
   if (REPORT_LIMIT_ENABLED && usage.remaining <= 0) {
     state.status = `${state.profile.name || "这个昵称"} 今天已经生成过 ${DAILY_REPORT_LIMIT} 次 DeepSeek 报告了。明天可以再生成；当前先保留基础报告。`;
     renderReport();
     return;
   }
-  saveApiKey(apiKey);
   state.loadingReport = true;
   state.status = REPORT_LIMIT_ENABLED
     ? `正在请求 DeepSeek 生成报告... 今天剩余 ${usage.remaining} 次`
-    : "正在请求 DeepSeek 生成报告... 测试阶段暂不限生成次数";
+    : "正在通过安全代理生成 DeepSeek 报告... 测试阶段暂不限生成次数";
   renderReport();
   try {
     const diagnosis = state.diagnosis || calculateDiagnosis();
-    const payload = {
-      profile: state.profile,
-      level: diagnosis.level.name,
-      scores: diagnosis.dimensionScores,
-      evidence: diagnosis.evidence,
-      bottleneck: diagnosis.bottleneck.text,
-      next_breakthrough: diagnosis.nextBreakthrough,
-      collaboration_modes: diagnosis.collaborationModes,
-      selected_answers: diagnosis.selectedAnswers,
-      style: "中文、直接、鼓励、具体、专业克制",
-    };
-    const response = await fetch("https://api.deepseek.com/chat/completions", {
+    const payload = buildReportPayload(diagnosis);
+    const response = await fetch(WORKER_REPORT_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model: "deepseek-chat",
-        messages: [
-          { role: "system", content: REPORT_PROMPT },
-          { role: "user", content: JSON.stringify(payload, null, 2) },
-        ],
-        temperature: 0.7,
-      }),
+      body: JSON.stringify(payload),
     });
-    if (!response.ok) throw new Error(`DeepSeek 请求失败：${response.status}`);
     const data = await response.json();
-    const content = data?.choices?.[0]?.message?.content;
+    if (!response.ok || data?.ok === false) throw new Error(data?.message || `报告代理请求失败：${response.status}`);
+    const content = data?.report_markdown;
     if (!content) throw new Error("DeepSeek 没有返回报告内容");
     state.aiReport = content;
     if (REPORT_LIMIT_ENABLED) recordReportUsage();
     const nextUsage = getReportUsage();
     state.status = REPORT_LIMIT_ENABLED
       ? `已生成 DeepSeek 个性化报告。今天还可生成 ${nextUsage.remaining} 次。`
+      : data?.submission_id
+      ? `已生成 DeepSeek 个性化报告，并保存测试记录：${data.submission_id}。`
       : "已生成 DeepSeek 个性化报告。测试阶段可继续多次生成。";
   } catch (error) {
     state.status = `${error.message}。已保留本地模板报告。`;
@@ -879,6 +829,22 @@ async function generateAiReport(options = {}) {
     state.loadingReport = false;
     renderReport();
   }
+}
+
+function buildReportPayload(diagnosis) {
+  return {
+    profile: state.profile,
+    level: diagnosis.level.name,
+    raw_score: diagnosis.rawScore,
+    dimension_scores: diagnosis.dimensionScores,
+    evidence: diagnosis.evidence,
+    bottleneck: diagnosis.bottleneck.text,
+    next_breakthrough: diagnosis.nextBreakthrough,
+    collaboration_modes: diagnosis.collaborationModes,
+    selected_answers: diagnosis.selectedAnswers,
+    source_url: window.location.href,
+    app_version: APP_VERSION,
+  };
 }
 
 function copyReport() {

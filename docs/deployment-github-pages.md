@@ -188,6 +188,34 @@ tasks.md
 
 当前不实现 Worker 或 Vercel Function，只记录为正式发布前的架构待办。
 
+更新：公开测试版已选择并实现 Cloudflare Worker + D1 模板。前端默认请求：
+
+```text
+https://ai-test-deepseek-proxy.jedi0310.workers.dev/api/report
+```
+
+用户已创建 D1 数据库：
+
+```text
+ai-test-reports
+```
+
+Cloudflare 侧仍需要用户在网页后台完成：
+
+1. 创建或打开 Worker `ai-test-deepseek-proxy`。
+2. 复制 `cloudflare-worker/worker.js` 到 Worker。
+3. 给 Worker 添加 D1 binding：变量名 `DB`，数据库 `ai-test-reports`。
+4. 在 D1 控制台运行 `cloudflare-worker/schema.sql`。
+5. 在 Worker Secrets 中添加 `DEEPSEEK_API_KEY` 和 `ADMIN_TOKEN`。
+6. 部署 Worker。
+7. 访问 `/api/health` 检查 Worker 是否可用。
+
+完整步骤见：
+
+```text
+docs/deepseek-cloudflare-worker.md
+```
+
 ## SSH 合并与 push 成功记录
 
 2026-06-18，用户确认允许合并远端已有提交且不强推后，项目线程完成：
