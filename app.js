@@ -2,18 +2,22 @@ const DIMENSIONS = {
   control: {
     name: "表达清晰度",
     description: "能否用背景、目标、格式、例子和标准把需求说清楚",
+    anchors: ["Lv.0 一句话需求", "Lv.3 有背景有格式", "Lv.5 有样例有标准", "Lv.8 有自查机制"],
   },
   breadth: {
     name: "场景迁移度",
     description: "是否把 AI 用到多类真实任务，而不是只查资料或闲聊",
+    anchors: ["Lv.0 未使用", "Lv.3 2-3 类场景", "Lv.6 5 类以上", "Lv.9 遇新任务先想 AI"],
   },
   form: {
     name: "流程协作度",
     description: "是否让 AI 参与多步骤任务、工具操作或连续执行",
+    anchors: ["Lv.0 单次问答", "Lv.4 有固定步骤", "Lv.7 连续执行/Agent", "Lv.10 全自动流程"],
   },
   role: {
     name: "资产沉淀度",
     description: "是否把有效方法沉淀成模板、资料包、检查清单或流程",
+    anchors: ["Lv.0 无沉淀", "Lv.4 零散保存", "Lv.7 有固定模板", "Lv.10 可复用系统"],
   },
 };
 
@@ -21,14 +25,25 @@ const LEVELS = [
   { id: 0, name: "Lv.0 旁观者", summary: "AI 还没有进入你的真实任务。" },
   { id: 1, name: "Lv.1 尝鲜者", summary: "你会试用 AI，但还没有稳定使用方式。" },
   { id: 2, name: "Lv.2 对话者", summary: "你能用 AI 完成简单问答和基础生成。" },
-  { id: 3, name: "Lv.3 驯化师", summary: "你开始用更清楚的需求控制 AI 输出。" },
-  { id: 4, name: "Lv.4 越境者", summary: "你能把 AI 带到更多类型的任务里。" },
+  { id: 3, name: "Lv.3 驯化师", summary: "你知道 AI 不是算命的，但还在第一轮才补条件。" },
+  { id: 4, name: "Lv.4 越境者", summary: "你把 AI 带到了更多任务里，不只是聊天。" },
   { id: 5, name: "Lv.5 织网者", summary: "你已经形成一些稳定的 AI 工作套路。" },
   { id: 6, name: "Lv.6 召唤师", summary: "你开始让 AI 处理连续步骤和工具任务。" },
   { id: 7, name: "Lv.7 铸造师", summary: "你开始打造自己的模板、资料包和流程。" },
   { id: 8, name: "Lv.8 造物主", summary: "AI 已深度参与从想法到交付的过程。" },
   { id: 9, name: "Lv.9 觉醒者", summary: "AI 协作已经成为你的工作方法论。" },
   { id: 10, name: "Lv.10 一人军团", summary: "你拥有可复用、可扩展的个人 AI 系统。" },
+];
+
+const SCENARIO_LIST = [
+  "写作（文案/文章/脚本）",
+  "学习（解释概念/出练习题/做总结）",
+  "图片/视频生成或编辑",
+  "表格/数据处理/分析",
+  "方案策划/头脑风暴",
+  "代码/脚本/工具",
+  "求职（简历/面试准备/职业规划）",
+  "生活规划（旅行/理财/健康/决策）",
 ];
 
 const QUESTIONS = [
@@ -60,11 +75,18 @@ const QUESTIONS = [
         evidence: "已经在常见任务中稳定使用 AI",
       },
       {
-        title: "10 个以上",
-        desc: "几乎每天都会用，并经常来回改几轮，直到结果能交付。",
+        title: "10-30 个",
+        desc: "几乎每天都会用，经常来回改几轮，直到结果能交付。",
         score: 3,
         dims: { control: 2, breadth: 1, form: 1, role: 0 },
         evidence: "AI 已进入日常多轮协作",
+      },
+      {
+        title: "30 个以上",
+        desc: "深度日常依赖，AI 是我完成大部分任务的第一步动作。",
+        score: 4,
+        dims: { control: 3, breadth: 2, form: 2, role: 1 },
+        evidence: "AI 已深度嵌入日常工作流",
       },
     ],
   },
@@ -143,12 +165,16 @@ const QUESTIONS = [
   {
     id: "breadth",
     label: "场景范围",
-    title: "过去 30 天，你把 AI 用在过几类任务上？",
-    hint: "按类型算：写作、学习、图片视频、表格数据、方案策划、代码工具、求职简历、生活规划等。",
+    title: "过去 30 天，你把 AI 用在过哪些类型的任务上？",
+    hint: "勾选所有符合的项，不用全选。系统会根据你勾选的数量和类型判断。",
+    multiSelect: true,
+    scenarios: SCENARIO_LIST,
     options: [
       {
         title: "0-1 类",
         desc: "主要是查资料、解释概念，像一个更会说话的搜索框。",
+        minCount: 0,
+        maxCount: 1,
         score: 0,
         dims: { control: 0, breadth: 0, form: 0, role: 0 },
         evidence: "AI 使用场景仍集中在简单查询",
@@ -156,6 +182,8 @@ const QUESTIONS = [
       {
         title: "2 类",
         desc: "例如查资料 + 写文案，或学习 + 改简历。",
+        minCount: 2,
+        maxCount: 2,
         score: 1,
         dims: { control: 0, breadth: 1, form: 0, role: 0 },
         evidence: "AI 主要服务于少数固定任务",
@@ -163,6 +191,8 @@ const QUESTIONS = [
       {
         title: "3-4 类",
         desc: "已经会在写作、总结、表格、方案、学习、图片或代码里挑着用。",
+        minCount: 3,
+        maxCount: 4,
         score: 2,
         dims: { control: 0, breadth: 3, form: 0, role: 0 },
         evidence: "AI 已覆盖多个工作和学习场景",
@@ -170,6 +200,8 @@ const QUESTIONS = [
       {
         title: "5 类以上",
         desc: "遇到不熟的任务，也会先让 AI 帮你做初稿、原型、计划或检查。",
+        minCount: 5,
+        maxCount: 99,
         score: 3,
         dims: { control: 1, breadth: 4, form: 1, role: 1 },
         evidence: "会用 AI 跨场景完成探索和原型",
@@ -213,38 +245,38 @@ const QUESTIONS = [
     ],
   },
   {
-    id: "agent_tools",
-    label: "Agent 识别",
-    title: "下面哪一组更接近“Agent / 自动执行型 AI”？",
-    hint: "Agent 不只是聊天，它通常能连续执行步骤，或能操作文件、网页、代码、工具。",
+    id: "agent_behavior",
+    label: "Agent 行为",
+    title: "下面哪种情况更接近你用过 AI 的方式？",
+    hint: "看你实际有没有把 AI 用在连续任务或工具操作里，而不是只看你知道不知道 Agent 这个词。",
     options: [
       {
-        title: "ChatGPT、DeepSeek、Kimi",
-        desc: "它们主要是通用聊天模型或聊天产品，不等于 Agent 本身。",
+        title: "没有，AI 只负责单次问答",
+        desc: "每次都是我问一句、它答一句，没有连续执行，也没有操作过文件或代码。",
         score: 0,
         dims: { control: 0, breadth: 0, form: 0, role: 0 },
-        evidence: "仍容易把聊天模型和自动执行型 AI 混在一起",
+        evidence: "还没有让 AI 执行连续步骤",
       },
       {
-        title: "Midjourney、剪映 AI、Gamma",
-        desc: "它们很有用，但更偏单点生成工具，不是典型 Agent 组合。",
+        title: "试过让 AI 改代码或处理文件",
+        desc: "比如把一段代码粘给 AI 让它改，或让 AI 帮我整理一个表格或文件，但它还是会停下来等我确认。",
         score: 1,
-        dims: { control: 0, breadth: 0, form: 1, role: 0 },
-        evidence: "能识别部分 AI 工具，但对 Agent 边界还不稳定",
+        dims: { control: 0, breadth: 0, form: 2, role: 0 },
+        evidence: "试过让 AI 操作文件或代码",
       },
       {
-        title: "Notion AI、Grammarly、Canva AI",
-        desc: "它们常嵌在软件里辅助写作或设计，但通常不负责长程自动执行。",
-        score: 1,
-        dims: { control: 0, breadth: 1, form: 1, role: 0 },
-        evidence: "能区分常见 AI 助手，但 Agent 识别仍需加强",
+        title: "用过能连续执行的 AI 工具",
+        desc: "例如 Cursor Agent、GitHub Copilot Workspace、浏览器 Agent 等，能连续执行多步直到完成。",
+        score: 2,
+        dims: { control: 1, breadth: 0, form: 4, role: 1 },
+        evidence: "有使用连续执行 AI 工具的经验",
       },
       {
-        title: "Cursor Agent、Codex、浏览器 Agent",
-        desc: "这类工具可以改文件、跑代码、操作网页或连续执行多步任务，更接近 Agent。",
+        title: "我设计了 AI 的执行流程",
+        desc: "比如给 AI 写执行规则、接多个工具、或把 AI 流程沉淀成可复用的方法。",
         score: 3,
         dims: { control: 2, breadth: 1, form: 5, role: 3 },
-        evidence: "能识别自动执行型 AI 和普通聊天工具的区别",
+        evidence: "会设计或定制 AI 执行流程",
       },
     ],
   },
@@ -332,6 +364,7 @@ const state = {
   screen: "start",
   current: 0,
   answers: {},
+  multiSelections: {},
   optionOrder: {},
   profile: loadProfile(),
   profileDraft: { name: "", industry: "", role: "", contact: "" },
@@ -431,8 +464,25 @@ function renderProfile() {
 }
 
 function renderQuestion() {
+  // 对 multiSelect 题型，确保答案已初始化
+  const _q = QUESTIONS[state.current];
+  if (_q.multiSelect && !state.answers[_q.id]) {
+    const _indices = (state.multiSelections[_q.id] || []);
+    const _count = _indices.length;
+    const _matched = _q.options.find(opt => _count >= opt.minCount && _count <= opt.maxCount);
+    if (_matched) {
+      state.answers[_q.id] = getOptionId(_q, _q.options.indexOf(_matched));
+    }
+  }
   const question = QUESTIONS[state.current];
-  const selectedOptionId = state.answers[question.id];
+  const selectedOptionId = question.multiSelect
+    ? (() => {
+        const indices = (state.multiSelections[question.id] || []);
+        const count = indices.length;
+        const matched = question.options.find(opt => count >= opt.minCount && count <= opt.maxCount);
+        return matched ? getOptionId(question, question.options.indexOf(matched)) : undefined;
+      })()
+    : state.answers[question.id];
   const answeredCount = Object.keys(state.answers).length;
   const progress = Math.round((answeredCount / QUESTIONS.length) * 100);
   const orderedOptions = getOrderedOptions(question);
@@ -451,21 +501,50 @@ function renderQuestion() {
         </aside>
         <section class="question-main">
           <h1>${escapeHtml(question.title)}</h1>
-          <div class="options" role="radiogroup" aria-label="${escapeHtml(question.title)}">
-            ${orderedOptions
-              .map(
-                (option, index) => `
-                  <button class="option ${selectedOptionId === option.id ? "selected" : ""}" data-action="answer" data-option-id="${option.id}" role="radio" aria-checked="${selectedOptionId === option.id}">
-                    <span class="option-key">${String.fromCharCode(65 + index)}</span>
-                    <span class="option-copy">
-                      <strong>${escapeHtml(option.title)}</strong>
-                      <span>${escapeHtml(option.desc)}</span>
-                    </span>
-                  </button>
-                `
-              )
-              .join("")}
-          </div>
+          ${
+            question.multiSelect
+              ? `<div class="scenario-grid">
+                  ${question.scenarios.map((scenario, i) => {
+                    const checked = (state.multiSelections[question.id] || []).includes(i);
+                    return `<label class="scenario-checkbox ${checked ? "selected" : ""}">
+                      <input type="checkbox" data-action="toggle-scenario" data-question-id="${question.id}" data-index="${i}" ${checked ? "checked" : ""} />
+                      <span>${escapeHtml(scenario)}</span>
+                    </label>`;
+                  }).join("")}
+                </div>
+                <p class="scenario-hint">已选 ${((state.multiSelections[question.id] || []).length)} 项</p>
+                <div class="options" role="radiogroup" aria-label="${escapeHtml(question.title)}">
+                  ${question.options.map((option, index) => {
+                    const optId = getOptionId(question, index);
+                    const isMatch = (state.answers[question.id] || "").startsWith(optId.split("_")[0] + "_") && Number((state.answers[question.id] || "").split("_")[1]) >= option.minCount && Number((state.answers[question.id] || "").split("_")[1]) <= option.maxCount;
+                    // 简化：直接用 index 对应分数档
+                    const picked = state.answers[question.id];
+                    const isSelected = picked && getOptionIndex(question, picked) === index;
+                    return `<button class="option ${isSelected ? "selected" : ""}" data-action="answer" data-option-id="${optId}" role="radio" aria-checked="${isSelected}">
+                      <span class="option-key">${String.fromCharCode(65 + index)}</span>
+                      <span class="option-copy">
+                        <strong>${escapeHtml(option.title)}</strong>
+                        <span>${escapeHtml(option.desc)}</span>
+                      </span>
+                    </button>`;
+                  }).join("")}
+                </div>`
+              : `<div class="options" role="radiogroup" aria-label="${escapeHtml(question.title)}">
+                  ${orderedOptions
+                    .map(
+                      (option, index) => `
+                        <button class="option ${selectedOptionId === option.id ? "selected" : ""}" data-action="answer" data-option-id="${option.id}" role="radio" aria-checked="${selectedOptionId === option.id}">
+                          <span class="option-key">${String.fromCharCode(65 + index)}</span>
+                          <span class="option-copy">
+                            <strong>${escapeHtml(option.title)}</strong>
+                            <span>${escapeHtml(option.desc)}</span>
+                          </span>
+                        </button>
+                      `
+                    )
+                    .join("")}
+                </div>`
+          }
           <div class="question-actions">
             <button class="button secondary" data-action="back" ${state.current === 0 ? "disabled" : ""}>上一步</button>
             <button class="button" data-action="next" ${selectedOptionId === undefined ? "disabled" : ""}>${state.current === QUESTIONS.length - 1 ? "生成报告" : "下一题"}</button>
@@ -555,15 +634,24 @@ function renderReport() {
             ${Object.entries(DIMENSIONS)
               .map(([key, item]) => {
                 const score = diagnosis.dimensionScores[key];
+                const anchors = item.anchors || [];
                 return `
                   <div class="dimension-row">
-                    <div><strong>${item.name}</strong><span>${item.description}</span></div>
+                    <div><strong>${item.name}</strong><span>${item.description}</span>
+                      <div class="dimension-anchors">
+                        ${anchors.map((a, i) => `<span class="${i <= Math.round(score / 2.5) ? "current-anchor" : ""}">${a}</span>`).join("")}
+                      </div>
+                    </div>
                     <div class="bar" aria-hidden="true"><span class="bar-fill" style="width:${score * 10}%"></span></div>
                     <em>${score}/10</em>
                   </div>
                 `;
               })
               .join("")}
+          </section>
+          <section class="panel next-exercise-panel">
+            <h2>本周练习</h2>
+            <p>${diagnosis.weeklyExercise || "完成测试后查看你的专属练习建议。"}</p>
           </section>
           <section class="panel">
             <h2>关键证据</h2>
@@ -623,6 +711,7 @@ function calculateDiagnosis() {
     evidence: picked.map((item) => item.option.evidence),
     bottleneck,
     nextBreakthrough: getNextBreakthrough(bottleneckKey, level.id),
+    weeklyExercise: getWeeklyExercise(bottleneckKey, level.id, dimensionScores),
     collaborationModes: getCollaborationModes(dimensionScores, level.id),
     reportTitle: getReportTitle(level.id),
     selectedAnswers: picked.map((item) => ({
@@ -657,10 +746,10 @@ function getLevelCap(answers) {
   if ((answers.prompt_context || 0) < 2 && (answers.bad_answer || 0) < 2) cap = Math.min(cap, 2);
   if ((answers.breadth || 0) < 2) cap = Math.min(cap, 4);
   if ((answers.workflow || 0) < 2 && (answers.assets || 0) < 2) cap = Math.min(cap, 5);
-  if ((answers.agent_tools || 0) < 3) cap = Math.min(cap, 6);
+  if ((answers.agent_behavior || 0) < 1) cap = Math.min(cap, 6);
   if (!((answers.workflow || 0) >= 3 || (answers.assets || 0) >= 3)) cap = Math.min(cap, 7);
   if (!((answers.first_reaction || 0) >= 3 && (answers.workflow || 0) >= 3)) cap = Math.min(cap, 8);
-  if (!((answers.agent_tools || 0) >= 3 && (answers.assets || 0) >= 3 && (answers.breadth || 0) >= 3)) {
+  if (!((answers.agent_behavior || 0) >= 3 && (answers.assets || 0) >= 3 && (answers.breadth || 0) >= 3)) {
     cap = Math.min(cap, 9);
   }
   return cap;
@@ -694,6 +783,34 @@ function getNextBreakthrough(key, level) {
   }[key];
 }
 
+function getWeeklyExercise(bottleneckKey, level, dimensionScores) {
+  const exercises = {
+    control: [
+      "用「背景 + 目标 + 格式 + 样例」格式，重写你常用的 3 个 AI 提问。",
+      "找一个最近不满意的 AI 回答，用具体修改要求（不是「重写」）让它改进。",
+      "建立一个提示词自查清单：是否有背景？有输出格式？有样例？有验收标准？",
+    ],
+    breadth: [
+      "本周挑一个你从没让 AI 做过的任务（比如做图、做表、写代码），让它做初稿。",
+      "列一个「AI 能力清单」，把 8 类场景里你还没用过的标出来，下周挑一个试。",
+      "遇到新任务时，先停 10 秒想：这件事能不能让 AI 先做一版？",
+    ],
+    form: [
+      "找一个三步以上的重复任务，让 AI 按「第一步…第二步…第三步…」执行。",
+      "试用一个能操作文件或代码的 AI 工具（比如 Cursor、Claude Artifacts）。",
+      "把一次完整的 AI 协作过程截图或文字记录，看看哪一步最容易出错。",
+    ],
+    role: [
+      "把最近一次满意的 AI 对话整理成固定提示词，保存在笔记里。",
+      "为你的高频任务建立一套「参考资料包」（品牌语气、常用格式、验收标准）。",
+      "把一个你做过的 AI 协作流程写成步骤清单，下次直接照着用。",
+    ],
+  };
+  const pool = exercises[bottleneckKey] || exercises.control;
+  const week = (level + 1) % pool.length;
+  return `本周练习（${DIMENSIONS[bottleneckKey].name}）：${pool[week]}`;
+}
+
 function getCollaborationModes(scores, level) {
   const modes = [];
   if (level <= 2 || scores.control < 6) modes.push("需求模板：背景、目标、格式、限制、检查标准一次讲明白");
@@ -720,6 +837,9 @@ ${profileLine}。你的当前等级是 **${diagnosis.level.name}**。${diagnosis
 
 ### 当前瓶颈
 ${diagnosis.bottleneck.text}
+
+### 本周练习
+${diagnosis.weeklyExercise || ""}
 
 ### 下一步建议
 - ${diagnosis.nextBreakthrough}
@@ -904,6 +1024,7 @@ function buildReportPayload(diagnosis) {
     next_breakthrough: diagnosis.nextBreakthrough,
     collaboration_modes: diagnosis.collaborationModes,
     selected_answers: diagnosis.selectedAnswers,
+    weekly_exercise: diagnosis.weeklyExercise || "",
     source_url: window.location.href,
     app_version: APP_VERSION,
   };
@@ -1059,7 +1180,40 @@ app.addEventListener("click", (event) => {
   }
   if (action === "answer") {
     const question = QUESTIONS[state.current];
-    state.answers[question.id] = target.dataset.optionId;
+    if (question.multiSelect) {
+      // multiSelect: 先收集勾选的场景 indices，再找到对应的 option
+      const indices = state.multiSelections[question.id] || [];
+      const count = indices.length;
+      const matched = question.options.find(opt => count >= opt.minCount && count <= opt.maxCount);
+      if (matched) {
+        const optIndex = question.options.indexOf(matched);
+        state.answers[question.id] = getOptionId(question, optIndex);
+      } else {
+        state.answers[question.id] = getOptionId(question, 0);
+      }
+    } else {
+      state.answers[question.id] = target.dataset.optionId;
+    }
+    renderQuestion();
+  }
+  if (action === "toggle-scenario") {
+    const questionId = target.dataset.questionId;
+    const index = Number(target.dataset.index);
+    if (!state.multiSelections[questionId]) state.multiSelections[questionId] = [];
+    const arr = state.multiSelections[questionId];
+    const pos = arr.indexOf(index);
+    if (pos >= 0) arr.splice(pos, 1); else arr.push(index);
+    // 实时更新答案
+    const question = QUESTIONS.find(q => q.id === questionId);
+    const count = arr.length;
+    const matched = question.options.find(opt => count >= opt.minCount && count <= opt.maxCount);
+    if (matched) {
+      const optIndex = question.options.indexOf(matched);
+      state.answers[questionId] = getOptionId(question, optIndex);
+    } else {
+      // 不应该发生（总有一个 option 的 minCount=0 能匹配），但保险起见删掉答案
+      delete state.answers[questionId];
+    }
     renderQuestion();
   }
   if (action === "next") {

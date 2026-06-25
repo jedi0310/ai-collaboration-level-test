@@ -208,7 +208,7 @@ input:focus-visible {
 }
 
 .method-row p,
-.question-context p,
+.question-text p,
 .report-hero p,
 .score-card p,
 .panel li,
@@ -301,6 +301,57 @@ input:focus-visible {
 .question-main h1 {
   font-size: clamp(34px, 5vw, 64px);
   margin-bottom: 30px;
+}
+
+/* Multi-select scenario grid (Q4) */
+.scenario-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.scenario-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  background: rgba(251, 247, 239, 0.74);
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease;
+  user-select: none;
+}
+
+.scenario-checkbox:hover {
+  border-color: var(--accent);
+  background: #fffaf3;
+}
+
+.scenario-checkbox.selected {
+  border-color: var(--accent);
+  background: #fffaf3;
+}
+
+.scenario-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-deep);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.scenario-checkbox span {
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.scenario-hint {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 8px;
 }
 
 .options {
@@ -506,6 +557,26 @@ input:focus-visible {
   line-height: 1.5;
 }
 
+.dimension-anchors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.dimension-anchors span {
+  color: var(--muted);
+  opacity: 0.6;
+  transition: opacity 160ms ease, font-weight 160ms ease;
+}
+
+.dimension-anchors .current-anchor {
+  opacity: 1;
+  font-weight: 700;
+  color: var(--accent-deep);
+}
+
 .bar {
   height: 6px;
   overflow: hidden;
@@ -551,6 +622,21 @@ input:focus-visible {
   padding: 12px 16px;
   background: var(--ink);
   color: var(--surface);
+}
+
+.next-exercise-panel {
+  background: linear-gradient(135deg, #fdf6f0, #fbf7ef);
+  border-color: var(--accent-deep);
+}
+
+.next-exercise-panel h2::before {
+  content: "📅 ";
+}
+
+.next-exercise-panel p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink);
 }
 
 .report-export {
@@ -687,6 +773,10 @@ input:focus-visible {
   .question-number {
     font-size: 76px;
     margin-bottom: 8px;
+  }
+
+  .scenario-grid {
+    grid-template-columns: 1fr;
   }
 }
 
