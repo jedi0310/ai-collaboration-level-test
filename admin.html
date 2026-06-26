@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 协同等级测试 · 数据看板</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f5f6fa;
+      --card: #ffffff;
+      --text: #1a1a2e;
+      --text2: #6b7280;
+      --border: #e5e7eb;
+      --primary: #4f46e5;
+      --primary-light: #eef2ff;
+      --green: #10b981;
+      --orange: #f59e0b;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ===== Login ===== */
+    #login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .login-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 40px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    .login-card h1 { font-size: 22px; margin-bottom: 8px; }
+    .login-card p { color: var(--text2); font-size: 14px; margin-bottom: 24px; }
+    .login-card input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      margin-bottom: 12px;
+      transition: border-color .2s;
+    }
+    .login-card input:focus { outline: none; border-color: var(--primary); }
+    .login-card button {
+      width: 100%;
+      padding: 12px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .login-card button:hover { background: #4338ca; }
+    .login-card button:disabled { opacity: .5; cursor: not-allowed; }
+    .login-error {
+      color: var(--red);
+      font-size: 13px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    /* ===== Dashboard ===== */
+    #dashboard { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; }
+    #dashboard.active { display: block; }
+
+    .dash-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .dash-header h1 { font-size: 24px; }
+    .dash-header .actions { display: flex; gap: 12px; }
+    .btn {
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text);
+      transition: all .2s;
+    }
+    .btn:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: #4338ca; }
+
+    /* Summary cards */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .summary-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    .summary-card .label { font-size: 13px; color: var(--text2); margin-bottom: 4px; }
+    .summary-card .value { font-size: 32px; font-weight: 700; }
+    .summary-card .sub { font-size: 12px; color: var(--text2); margin-top: 4px; }
+
+    /* Charts */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } }
+    .chart-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    .chart-card h3 { font-size: 15px; margin-bottom: 16px; color: var(--text); }
+    .chart-card canvas { max-height: 280px; }
+
+    /* Table */
+    .table-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    .table-card h3 { font-size: 15px; margin-bottom: 16px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 10px 12px; color: var(--text2); font-weight: 600; border-bottom: 2px solid var(--border); white-space: nowrap; }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    tr:hover { background: #f9fafb; cursor: pointer; }
+    .level-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .level-1 { background: #fef3c7; color: #92400e; }
+    .level-2 { background: #dbeafe; color: #1e40af; }
+    .level-3 { background: #d1fae5; color: #065f46; }
+    .level-4 { background: #e9d5ff; color: #6b21a8; }
+    .level-5 { background: #fce7f3; color: #9d174d; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--card);
+      border-radius: var(--radius);
+      max-width: 700px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 32px;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .modal-header h2 { font-size: 18px; }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--text2);
+    }
+    .modal-body { font-size: 14px; line-height: 1.8; }
+    .modal-body h3 { font-size: 15px; margin: 16px 0 8px; color: var(--primary); }
+    .modal-body .meta-row { display: flex; gap: 24px; margin-bottom: 12px; flex-wrap: wrap; }
+    .modal-body .meta-item { font-size: 13px; }
+    .modal-body .meta-item strong { color: var(--text2); font-weight: 600; }
+    .modal-body .report-content { background: #f9fafb; padding: 16px; border-radius: 8px; white-space: pre-wrap; font-size: 13px; line-height: 1.7; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text2); }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    .loading { text-align: center; padding: 40px; color: var(--text2); }
+  </style>
+</head>
+<body>
+
+<!-- ===== Login Screen ===== -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>AI 协同等级测试</h1>
+    <p>数据看板 · 请输入管理密钥</p>
+    <input type="password" id="token-input" placeholder="ADMIN_TOKEN" />
+    <button id="login-btn" onclick="doLogin()">登录</button>
+    <div class="login-error" id="login-error">密钥错误，请检查后重试</div>
+  </div>
+</div>
+
+<!-- ===== Dashboard ===== -->
+<div id="dashboard">
+  <div class="dash-header">
+    <h1>数据看板</h1>
+    <div class="actions">
+      <button class="btn" onclick="exportCSV()">导出 CSV</button>
+      <button class="btn" onclick="logout()">退出</button>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-grid" id="summary-grid">
+    <div class="summary-card"><div class="label">总测试人数</div><div class="value" id="stat-total">-</div></div>
+    <div class="summary-card"><div class="label">平均分</div><div class="value" id="stat-avg">-</div></div>
+    <div class="summary-card"><div class="label">主要等级</div><div class="value" id="stat-level">-</div></div>
+    <div class="summary-card"><div class="label">覆盖行业数</div><div class="value" id="stat-industries">-</div></div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>等级分布</h3>
+      <canvas id="chart-level"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>行业分布 TOP 8</h3>
+      <canvas id="chart-industry"></canvas>
+    </div>
+    <div class="chart-card" style="grid-column: 1 / -1;">
+      <h3>四维能力平均分</h3>
+      <canvas id="chart-radar" style="max-height: 320px;"></canvas>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <h3>最近提交记录</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>时间</th>
+            <th>姓名</th>
+            <th>行业</th>
+            <th>等级</th>
+            <th>总分</th>
+            <th>瓶颈维度</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Detail Modal ===== -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">报告详情</h2>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const API_BASE = "https://ai-test-deepseek-proxy.jedi0310.workers.dev";
+let ADMIN_TOKEN = localStorage.getItem("admin_token") || "";
+let allData = [];
+let charts = {};
+
+// ===== Login =====
+function doLogin() {
+  const input = document.getElementById("token-input");
+  const btn = document.getElementById("login-btn");
+  const err = document.getElementById("login-error");
+  const token = input.value.trim();
+  if (!token) return;
+  btn.disabled = true;
+  btn.textContent = "验证中...";
+  err.style.display = "none";
+
+  fetch(`${API_BASE}/api/admin/reports?limit=1`, {
+    headers: { "Authorization": `Bearer ${token}` }
+  })
+    .then(r => {
+      if (!r.ok) throw new Error("Unauthorized");
+      return r.json();
+    })
+    .then(() => {
+      ADMIN_TOKEN = token;
+      localStorage.setItem("admin_token", token);
+      showDashboard();
+    })
+    .catch(() => {
+      err.style.display = "block";
+      btn.disabled = false;
+      btn.textContent = "登录";
+    });
+}
+
+// Enter key
+document.getElementById("token-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") doLogin();
+});
+
+// ===== Auto-login if token exists =====
+if (ADMIN_TOKEN) {
+  fetch(`${API_BASE}/api/admin/reports?limit=1`, {
+    headers: { "Authorization": `Bearer ${ADMIN_TOKEN}` }
+  })
+    .then(r => { if (r.ok) showDashboard(); else throw new Error(); })
+    .catch(() => {});
+}
+
+// ===== Dashboard =====
+function showDashboard() {
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("dashboard").classList.add("active");
+  loadData();
+}
+
+function logout() {
+  localStorage.removeItem("admin_token");
+  ADMIN_TOKEN = "";
+  location.reload();
+}
+
+async function loadData() {
+  try {
+    // Fetch all data (up to 100 per page, fetch multiple pages)
+    let items = [];
+    let offset = 0;
+    const limit = 100;
+    let hasMore = true;
+    while (hasMore) {
+      const res = await fetch(`${API_BASE}/api/admin/reports?limit=${limit}&offset=${offset}`, {
+        headers: { "Authorization": `Bearer ${ADMIN_TOKEN}` }
+      });
+      if (!res.ok) throw new Error("Failed to load data");
+      const data = await res.json();
+      items = items.concat(data.items || []);
+      hasMore = (data.items || []).length === limit;
+      offset += limit;
+      // Safety: max 500 records
+      if (offset >= 500) break;
+    }
+    allData = items;
+    renderDashboard();
+  } catch (e) {
+    document.getElementById("table-body").innerHTML = `<tr><td colspan="6" class="empty-state"><div class="icon">⚠️</div>加载失败，请检查网络或密钥</td></tr>`;
+  }
+}
+
+function renderDashboard() {
+  if (allData.length === 0) {
+    document.getElementById("summary-grid").innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="icon">📭</div>还没有人做过测试</div>`;
+    return;
+  }
+
+  // ===== Summary =====
+  document.getElementById("stat-total").textContent = allData.length;
+
+  const avgScore = (allData.reduce((s, d) => s + (d.raw_score || 0), 0) / allData.length).toFixed(1);
+  document.getElementById("stat-avg").textContent = avgScore;
+
+  // Most common level
+  const levelCounts = {};
+  allData.forEach(d => { levelCounts[d.level] = (levelCounts[d.level] || 0) + 1; });
+  const topLevel = Object.entries(levelCounts).sort((a, b) => b[1] - a[1])[0];
+  document.getElementById("stat-level").textContent = topLevel ? topLevel[0] : "-";
+
+  // Industries
+  const industries = new Set(allData.map(d => d.industry).filter(Boolean));
+  document.getElementById("stat-industries").textContent = industries.size;
+
+  // ===== Level Distribution Chart =====
+  const levelOrder = ["Lv.1 新手", "Lv.2 入门", "Lv.3 进阶", "Lv.4 熟练", "Lv.5 精通"];
+  const levelLabels = Object.keys(levelCounts).sort((a, b) => {
+    const ai = levelOrder.findIndex(l => a.includes(l.split(" ")[0]) || a === l);
+    const bi = levelOrder.findIndex(l => b.includes(l.split(" ")[0]) || b === l);
+    return ai - bi;
+  });
+  const levelData = levelLabels.map(l => levelCounts[l]);
+  const levelColors = ["#fef3c7", "#dbeafe", "#d1fae5", "#e9d5ff", "#fce7f3"];
+  const levelBorders = ["#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ec4899"];
+
+  if (charts.level) charts.level.destroy();
+  charts.level = new Chart(document.getElementById("chart-level"), {
+    type: "doughnut",
+    data: {
+      labels: levelLabels,
+      datasets: [{
+        data: levelData,
+        backgroundColor: levelColors,
+        borderColor: levelBorders,
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: "bottom", labels: { font: { size: 12 } } }
+      }
+    }
+  });
+
+  // ===== Industry Chart =====
+  const industryCounts = {};
+  allData.forEach(d => {
+    const ind = d.industry || "未填写";
+    industryCounts[ind] = (industryCounts[ind] || 0) + 1;
+  });
+  const topIndustries = Object.entries(industryCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+  if (charts.industry) charts.industry.destroy();
+  charts.industry = new Chart(document.getElementById("chart-industry"), {
+    type: "bar",
+    data: {
+      labels: topIndustries.map(i => i[0]),
+      datasets: [{
+        data: topIndustries.map(i => i[1]),
+        backgroundColor: "#4f46e5",
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      indexAxis: "y",
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
+  });
+
+  // ===== Radar Chart =====
+  const dimKeys = ["control", "breadth", "form", "role"];
+  const dimNames = {
+    control: "提示词掌控",
+    breadth: "场景广度",
+    form: "交互形态",
+    role: "角色定位"
+  };
+  const dimAvgs = dimKeys.map(key => {
+    const scores = allData.map(d => {
+      try {
+        const ds = typeof d.dimension_scores === "string" ? JSON.parse(d.dimension_scores) : d.dimension_scores;
+        return ds[key] || 0;
+      } catch { return 0; }
+    });
+    return (scores.reduce((s, v) => s + v, 0) / scores.length).toFixed(1);
+  });
+
+  if (charts.radar) charts.radar.destroy();
+  charts.radar = new Chart(document.getElementById("chart-radar"), {
+    type: "radar",
+    data: {
+      labels: dimKeys.map(k => dimNames[k]),
+      datasets: [{
+        label: "平均分 /10",
+        data: dimAvgs,
+        backgroundColor: "rgba(79, 70, 229, 0.15)",
+        borderColor: "#4f46e5",
+        borderWidth: 2,
+        pointBackgroundColor: "#4f46e5",
+        pointRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        r: {
+          beginAtZero: true,
+          max: 10,
+          ticks: { stepSize: 2, font: { size: 11 } },
+          pointLabels: { font: { size: 13 } }
+        }
+      },
+      plugins: { legend: { position: "bottom" } }
+    }
+  });
+
+  // ===== Table =====
+  const tbody = document.getElementById("table-body");
+  tbody.innerHTML = allData.slice(0, 50).map(d => {
+    const date = new Date(d.created_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+    const levelClass = `level-${(d.level || "").match(/\d+/)?.[0] || 1}`;
+    return `<tr onclick="showDetail('${d.id}')">
+      <td>${date}</td>
+      <td>${escapeHtml(d.name || "匿名")}</td>
+      <td>${escapeHtml(d.industry || "-")}</td>
+      <td><span class="level-badge ${levelClass}">${escapeHtml(d.level || "-")}</span></td>
+      <td>${d.raw_score ?? "-"}</td>
+      <td>${escapeHtml(d.bottleneck || "-")}</td>
+    </tr>`;
+  }).join("");
+}
+
+// ===== Detail Modal =====
+async function showDetail(id) {
+  const modal = document.getElementById("modal");
+  const body = document.getElementById("modal-body");
+  modal.classList.add("active");
+  body.innerHTML = `<div class="loading">加载中...</div>`;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/reports/${id}`, {
+      headers: { "Authorization": `Bearer ${ADMIN_TOKEN}` }
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const item = data.item;
+
+    let dimScores = item.dimension_scores;
+    if (typeof dimScores === "string") {
+      try { dimScores = JSON.parse(dimScores); } catch { dimScores = {}; }
+    }
+
+    let answers = item.answers_json;
+    if (typeof answers === "string") {
+      try { answers = JSON.parse(answers); } catch { answers = []; }
+    }
+
+    const levelNum = (item.level || "").match(/\d+/)?.[0] || 1;
+
+    body.innerHTML = `
+      <div class="meta-row">
+        <div class="meta-item"><strong>姓名：</strong>${escapeHtml(item.name || "匿名")}</div>
+        <div class="meta-item"><strong>行业：</strong>${escapeHtml(item.industry || "-")}</div>
+        <div class="meta-item"><strong>职位：</strong>${escapeHtml(item.role || "-")}</div>
+        <div class="meta-item"><strong>联系方式：</strong>${escapeHtml(item.contact || "-")}</div>
+      </div>
+      <div class="meta-row">
+        <div class="meta-item"><strong>等级：</strong><span class="level-badge level-${levelNum}">${escapeHtml(item.level || "-")}</span></div>
+        <div class="meta-item"><strong>总分：</strong>${item.raw_score ?? "-"}</div>
+        <div class="meta-item"><strong>时间：</strong>${new Date(item.created_at).toLocaleString("zh-CN")}</div>
+      </div>
+      <h3>四维得分</h3>
+      <div class="meta-row">
+        <div class="meta-item">提示词掌控：${dimScores.control ?? "-"}/10</div>
+        <div class="meta-item">场景广度：${dimScores.breadth ?? "-"}/10</div>
+        <div class="meta-item">交互形态：${dimScores.form ?? "-"}/10</div>
+        <div class="meta-item">角色定位：${dimScores.role ?? "-"}/10</div>
+      </div>
+      <h3>瓶颈 & 突破</h3>
+      <p><strong>瓶颈：</strong>${escapeHtml(item.bottleneck || "-")}</p>
+      <p><strong>下一步：</strong>${escapeHtml(item.next_breakthrough || "-")}</p>
+      ${item.report_markdown ? `<h3>AI 生成报告</h3><div class="report-content">${escapeHtml(item.report_markdown)}</div>` : ""}
+    `;
+  } catch {
+    body.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div>加载失败</div>`;
+  }
+}
+
+function closeModal() {
+  document.getElementById("modal").classList.remove("active");
+}
+
+// ===== CSV Export =====
+function exportCSV() {
+  if (allData.length === 0) return;
+  const headers = ["时间", "姓名", "行业", "职位", "联系方式", "等级", "总分", "提示词掌控", "场景广度", "交互形态", "角色定位", "瓶颈", "下一步"];
+  const rows = allData.map(d => {
+    let ds = d.dimension_scores;
+    if (typeof ds === "string") { try { ds = JSON.parse(ds); } catch { ds = {}; } }
+    return [
+      d.created_at, d.name, d.industry, d.role, d.contact,
+      d.level, d.raw_score,
+      ds.control, ds.breadth, ds.form, ds.role,
+      d.bottleneck, d.next_breakthrough
+    ].map(v => `"${String(v || "").replace(/"/g, '""')}"`).join(",");
+  });
+  const csv = "\uFEFF" + headers.map(h => `"${h}"`).join(",") + "\n" + rows.join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `ai-test-data-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ===== Utils =====
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = String(str || "");
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>
